@@ -61,7 +61,8 @@ actions = {
     }
 while True:
     a = raw_input()
-    if a == 'q':
+    if a in actions:
+        actions[a]()
+    elif a == 'q':
         disconnect()
         break
-    actions[ a ]()
