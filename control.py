@@ -32,6 +32,16 @@ class Serial:
             self.connect()
             self.send(msg)
 
+    def receive(self, size=1):
+        while True:
+            while self.connection.read() != 'S':
+                pass
+            buf = ''
+            for i in xrange(size):
+                buf = buf+self.connection.read()
+            if self.connection.read() == 'E':
+                return buf
+
     def stop(self):
         self.connection.close()
 
@@ -52,17 +62,23 @@ def turnRight():
 def disconnect():
     robot.stop()
 
-actions = {
-    'f': goForward,
-    'b': goBack,
-    's': stop,
-    'l': turnLeft,
-    'r': turnRight,
-    }
-while True:
-    a = raw_input()
-    if a in actions:
-        actions[a]()
-    elif a == 'q':
-        disconnect()
-        break
+# actions = {
+#     'f': goForward,
+#     'b': goBack,
+#     's': stop,
+#     'l': turnLeft,
+#     'r': turnRight,
+#     }
+# while True:
+#     a = raw_input()
+#     if a in actions:
+#         actions[a]()
+#     elif a == 'q':
+#         disconnect()
+#         break
+
+goForward()
+robot.receive()
+turnRight()
+time.sleep(5)
+stop()
