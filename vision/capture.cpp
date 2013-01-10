@@ -86,7 +86,7 @@ int initCam(struct cam *c, char *device) {
 /*
   Call when done with camera (this should be called for a clean exit!)
  */
-int closeCam(struct cam *c) {
+void closeCam(struct cam *c) {
   int i;
   disableCapture(c);
   // Release memory maps
@@ -104,7 +104,6 @@ int closeCam(struct cam *c) {
 int enableCapture(struct cam *c) {
   // Enable video capture
   int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  int ret;
   if(c->captureEnabled) {
     return 0;
   }
