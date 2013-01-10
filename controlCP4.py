@@ -7,7 +7,8 @@ dgonz@mit.edu
 import os
 import serial
 import time
-from PIDControlModule import PIDController
+from pylib.PIDControlModule import PIDController
+import vision.vision as vision
 
 class Serial:
     def __init__(self, baudrate=115200, prestring='/dev/ttyACM'):
@@ -15,7 +16,7 @@ class Serial:
         self.prestring = prestring
         self.connection = None
 
-    def connect(self, port = '/dev/ttyACM1'):
+    def connect(self, port = None):
         if self.connection is not None:
             self.connection.close()
             self.connection = None
@@ -75,26 +76,37 @@ def limitCommand(var,minVal, maxVal):
     elif var<minVal:
         var = minVal
     return var
+    
+def motCmdBytes(x):
+    #Converts an input into two bytes to be sent to the Arduino
+    #input commands can be from [-255 : 255]
+    x = limitCommand(int(x),-255,255)
+    if x>=0:
+        return chr(0)+chr(x)
+    elif x<0:
+        return chr(abs(x))+chr(0)
 
 def commandMotors(lPWM,rPWM):
-    #send a command to motors. Commands can range from -127 to 127
-    lPWM = limitCommand(int(lPWM),-127,127)
-    rPWM = limitCommand(int(rPWM),-127,127)
-    robot.send(chr(ZERO+lPWM)+chr(ZERO+rPWM))
+    #send a command to motors. Commands can range from -255 to 255
+    sendIt = motCmdBytes(lPWM)+motCmdBytes(rPWM)
+    robot.send(sendIt)
 
 def getBallPose():
     #TODO: implement this
-    return [640,480,300]
+    return vision.getBallPose()
 
 def main():
-    camRes = [1280,720]
+    camRes = [320,240]
     ballPose = [0,0,0] #X, Y, Area
-    xTroller = PIDController(kP = .5, kI = .01, kD = .01)
+    xTroller = PIDController( mykP = .25, mykI = 0.0005, mykD = 0.001)
     xTroller.setDesired(camRes[0]/2)
+    aTroller = PIDController(mykP = .05, mykI = 0.00005, mykD = 0)
+    aTroller.setDesired(3600)
     command = 0
     while(True):
-        command = xTroller.update(getBallPose[0])
-        #print command
-        commandMotors(-1*command,command)
+        ball = getBallPose()
+        xCommand = xTroller.update(ball[0])
+        aCommand = aTroller.update(ball[2])
+        commandMotors(-1*xCommand+aCommand,xCommand+aCommand)
 
 main()

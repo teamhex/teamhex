@@ -68,7 +68,7 @@ static int dir(int val) {
 }
 
 void setup(){
-  Serial.begin(1000000);
+  Serial.begin(115200);
   
   // Motors
   pinMode(LMotorDirPin,OUTPUT);
@@ -77,7 +77,8 @@ void setup(){
   digitalWrite(RMotorDirPin,LOW);
   commandL = 0;
   commandR = 0;
-   
+  
+  /*
   // Quadrature encoders
   // Left encoder
   pinMode(LeftEncoderPinA, INPUT);      // sets pin A as input
@@ -93,13 +94,14 @@ void setup(){
   digitalWrite(RightEncoderPinB, LOW);  // turn on pullup resistors
   attachInterrupt(RightEncoderIntA, HandleRightMotorInterruptA, CHANGE);
   attachInterrupt(RightEncoderIntB, HandleRightMotorInterruptB, CHANGE);
+  */
 }
 
 void loop(){
   serRead();
-  writeEncoderVals();
-  commandL = map(lIn,0,255,-255,255);
-  commandR = map(rIn,0,255,-255,255);
+  //writeEncoderVals();
+  commandL = lIn;
+  commandR = rIn;
   commandMotors(commandL, commandR);
 }
 
@@ -113,9 +115,15 @@ void establishContact() {
 void serRead(){
   while((inByte = Serial.read()) != 'S');
   while(!Serial.available());
-  lIn = (int)Serial.read();
+  int lIn1 = -1*(int)Serial.read();
   while(!Serial.available());
-  rIn = (int)Serial.read();
+  int lIn2 = (int)Serial.read();
+  lIn = lIn1+lIn2;
+  while(!Serial.available());
+  int rIn1 = -1*(int)Serial.read();
+  while(!Serial.available());
+  int rIn2 = (int)Serial.read();
+  rIn = rIn1+rIn2;
   while(!Serial.available());
   if((inByte = Serial.read()) == 'E') {
     return;
@@ -123,6 +131,7 @@ void serRead(){
 }
 
 void writeEncoderVals(){
+  //TODO: Make better
   Serial.print("S");//Start byte. Line dropped if not present
   Serial.print(rightEncoderTicks);
   Serial.print(",");//All data separated by commas

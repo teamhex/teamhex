@@ -70,4 +70,4 @@ int getSize() {
   return interestArea->getSize();
 }
 
-}
+}}
