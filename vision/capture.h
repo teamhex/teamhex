@@ -1,3 +1,6 @@
+#ifndef CAPTURE_H
+#define CAPTURE_H
+
 #define NBUFFERS 16
 #define WIDTH 640
 #define HEIGHT 480
@@ -19,3 +22,5 @@ void closeCam(struct cam *c);
 int capture(struct cam *c, int *buffer);
 int getRGB(void *p, int *buffer);
 void saveRGB(int *info, const char *filename);
+
+#endif

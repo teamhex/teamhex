@@ -8,6 +8,7 @@
 #include "colors.h"
 #include <unistd.h>
 #include <fcntl.h>
+#include "pixel.h"
 
 /*
   Initializes the camera drivers and the cam structure.
@@ -208,9 +209,20 @@ int main() {
   resetControl(&c, V4L2_CID_CONTRAST);
   resetControl(&c, V4L2_CID_SATURATION);
   resetControl(&c, V4L2_CID_GAIN);
+  PixelGrid grid(HEIGHT,WIDTH);
+  grid.setPixels(rgbPicture);
   capture(&c,rgbPicture);
-  for(int i = 0; i < 100; ++i) {
+  Grabber g = Grabber(WIDTH, HEIGHT);
+  g.findObjectsInImage(rgbPicture);
+  vector<const ColorParameters*> colors;
+  colors.push_back(&g.COLOR_PURPLE);
+  Position p = g.getCenterOfLargestArea(colors, rgbPicture);
+  printf("%d %d\n", p.l, p.c);
+  for(int i = 0; i < 10; ++i) {
     capture(&c,rgbPicture);
+    g.findObjectsInImage(rgbPicture);
+    p = g.getCenterOfLargestArea(colors,rgbPicture);
+    printf("%d %d\n", p.l, p.c);
   }
   saveRGB(rgbPicture, "snap");
   free(rgbPicture);

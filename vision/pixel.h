@@ -7,6 +7,8 @@ using namespace std;
 #define IS_VALID(POS,W,H) (((POS).l<(H)) && ((POS).l>=0) && ((POS).c<(W)) && ((POS).c>=0))
 #define NNEIGHBORS 8
 
+double angleDistance(double a1, double a2);
+
 struct Position {
   int l;
   int c;
@@ -77,6 +79,7 @@ class PixelArea {
   Position center;
   bool centerSet;
  public:
+  vector<Pixel*> pixels;
   int hue;
   int minX, maxX, minY, maxY;
 
@@ -95,15 +98,15 @@ class Grabber {
   vector<PixelArea> areas;
   
  public:
-  const ColorParameters COLOR_GREEN;
-  const ColorParameters COLOR_RED;
+  //const ColorParameters COLOR_GREEN;
+  //const ColorParameters COLOR_RED;
   const ColorParameters COLOR_PURPLE;
-  const ColorParameters COLOR_YELLOW;
+  //const ColorParameters COLOR_YELLOW;
   Grabber(int w, int h);
 
   vector<PixelArea> findObjectsInImage(int *rgb);
   
-  Position getCenterOfLargestArea(vector<const ColorParameters*> colors);
+  Position getCenterOfLargestArea(vector<const ColorParameters*> colors, int *rgbPicture);
   double getProportionalHorizontalOffset(int x);
 };
 
