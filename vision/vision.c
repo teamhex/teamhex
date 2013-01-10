@@ -4,6 +4,7 @@
 #include "pixel.h"
 #include <stdlib.h>
 
+extern "C" {
 struct cam c;
 Grabber g = Grabber(WIDTH,HEIGHT);
 int *rgbPicture = (int *) malloc(WIDTH*HEIGHT*sizeof(int));
@@ -37,7 +38,7 @@ PixelArea *interestArea;
 //   free(rgbPicture);
 //   closeCam(&c);
 // }
-
+extern "C" {
 void startCam(char *device) {
   initCam(&c, device);
   resetControl(&c, V4L2_CID_BRIGHTNESS);
@@ -69,3 +70,4 @@ int getSize() {
   return interestArea->getSize();
 }
 
+}
