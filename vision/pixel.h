@@ -96,17 +96,18 @@ class Grabber {
   PixelGrid pixels;
   vector<const ColorParameters*> colorsToFind;
   vector<PixelArea> areas;
+  PixelArea *largestArea;
   
  public:
-  //const ColorParameters COLOR_GREEN;
+  const ColorParameters COLOR_GREEN;
   //const ColorParameters COLOR_RED;
-  const ColorParameters COLOR_PURPLE;
+  //const ColorParameters COLOR_PURPLE;
   //const ColorParameters COLOR_YELLOW;
   Grabber(int w, int h);
 
   vector<PixelArea> findObjectsInImage(int *rgb);
   
-  Position getCenterOfLargestArea(vector<const ColorParameters*> colors, int *rgbPicture);
+  PixelArea *getLargestArea();
   double getProportionalHorizontalOffset(int x);
 };
 

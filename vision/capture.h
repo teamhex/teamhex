@@ -2,8 +2,8 @@
 #define CAPTURE_H
 
 #define NBUFFERS 16
-#define WIDTH 640
-#define HEIGHT 480
+#define WIDTH 320
+#define HEIGHT 240
 
 // Useful structure with all the necessary information about the camera
 struct cam {
@@ -23,5 +23,6 @@ void closeCam(struct cam *c);
 int capture(struct cam *c, int *buffer);
 int getRGB(void *p, int *buffer);
 void saveRGB(int *info, const char *filename);
+int resetControl(struct cam *c, int control);
 
 #endif

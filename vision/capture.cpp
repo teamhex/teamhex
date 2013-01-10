@@ -205,13 +205,8 @@ void saveRGB(int *info, const char *filename) {
   fclose(fp);
 }
 
-void *getCam() {
-  void *c = malloc(sizeof(struct cam))
-  return c;
-}
-
 // int main() {
-//   char *device = (char *)"/dev/video0";
+//   char *device = (char *)"/dev/video1";
 //   int *rgbPicture = (int *)malloc(WIDTH*HEIGHT*sizeof(int));
 //   struct cam c;
 //   initCam(&c, device);
@@ -225,16 +220,17 @@ void *getCam() {
 //   Grabber g = Grabber(WIDTH, HEIGHT);
 //   g.findObjectsInImage(rgbPicture);
 //   vector<const ColorParameters*> colors;
-//   colors.push_back(&g.COLOR_PURPLE);
+//   colors.push_back(&g.COLOR_GREEN);
 //   Position p = g.getCenterOfLargestArea(colors, rgbPicture);
+//   saveRGB(rgbPicture, "snap");
 //   printf("%d %d\n", p.l, p.c);
-//   for(int i = 0; i < 10; ++i) {
+//   for(int i = 0; i < 1000; ++i) {
 //     capture(&c,rgbPicture);
 //     g.findObjectsInImage(rgbPicture);
 //     p = g.getCenterOfLargestArea(colors,rgbPicture);
+//     saveRGB(rgbPicture, "snap");
 //     printf("%d %d\n", p.l, p.c);
 //   }
-//   saveRGB(rgbPicture, "snap");
 //   free(rgbPicture);
 //   closeCam(&c);
 // }

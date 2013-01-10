@@ -182,19 +182,23 @@ void PixelArea::addPixel(Pixel *pixel) {
 
 // Search image and find areas with interesting hues
 Grabber::Grabber(int w, int h): width(w),height(h),pixels(PixelGrid(h,w)),
-				//COLOR_GREEN(ColorParameters(125, 35, 1000)),
+				largestArea(NULL),
+				COLOR_GREEN(ColorParameters(125, 35, 250)) {
 				//COLOR_RED(ColorParameters(350, 10, 1000)),
-				COLOR_PURPLE(ColorParameters(350, 20, 5000)) {
+				//COLOR_PURPLE(ColorParameters(350, 20, 5000)) {
 				//COLOR_YELLOW(ColorParameters(255, 10, 5000)) {
 
-  colorsToFind.push_back(&COLOR_PURPLE);
-  //colorsToFind.push_back(&COLOR_GREEN);
+  //colorsToFind.push_back(&COLOR_PURPLE);
+  colorsToFind.push_back(&COLOR_GREEN);
   //colorsToFind.push_back(&COLOR_RED);
   //colorsToFind.push_back(&COLOR_YELLOW);
 }
 
 vector<PixelArea> Grabber::findObjectsInImage(int *rgb) {
   // Sets the RGB and HSL values for every pixel
+  int maxArea = 0;
+  largestArea = NULL;
+  areas.clear();
   pixels.setPixels(rgb);
   // Finds areas in the picture which are of the same hue
   for (int i = 0; i < width; i++) {
@@ -209,6 +213,10 @@ vector<PixelArea> Grabber::findObjectsInImage(int *rgb) {
 	    // about it
 	    if (area.getSize() > colorsToFind[k]->minSize) {
 	      areas.push_back(area);
+	      if(area.getSize() > maxArea) {
+		largestArea = &area;
+		maxArea = area.getSize();
+	      }
 	    }
 	    break;
 	  }
@@ -219,29 +227,8 @@ vector<PixelArea> Grabber::findObjectsInImage(int *rgb) {
   return areas;
 }
 
-Position Grabber::getCenterOfLargestArea(vector<const ColorParameters*> colors, int *rgbPicture) {
-  Position centerOfLargestArea = Position(0,0);
-  int maxArea = -1;
-  PixelArea *largestArea = NULL;
-  for (vector<PixelArea>::iterator area = areas.begin(); area != areas.end(); ++area) {
-    if (area->getSize() > maxArea) {
-      for (vector<const ColorParameters*>::iterator color = colors.begin(); color != colors.end(); ++color) {
-	if (area->hue == (*color)->hue) {
-	  largestArea = &(*area);
-	  centerOfLargestArea = area->getCenter();
-	  maxArea = area->getSize();
-	  break;
-	}
-      }
-    }
-  }
-  if(largestArea != NULL) {
-    for(vector<Pixel*>::iterator i = largestArea->pixels.begin(); i != largestArea->pixels.end(); ++i) {
-      Position p = (*i)->getPosition();
-      rgbPicture[p.l*640+p.c] = (255<<16)+(255<<8)+255;
-    }
-  }
-  return centerOfLargestArea;
+PixelArea *Grabber::getLargestArea() {
+  return largestArea;
 }
 
 double Grabber::getProportionalHorizontalOffset(int x) {
