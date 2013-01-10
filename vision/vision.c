@@ -7,8 +7,8 @@
 extern "C" {
 struct cam c;
 Grabber g = Grabber(WIDTH,HEIGHT);
-int *rgbPicture = (int *) malloc(WIDTH*HEIGHT*sizeof(int));
-PixelArea *interestArea;
+int *rgbPicture;
+PixelArea *interestArea = NULL;
   
 // int main() {
 //   char *device = (char *)"/dev/video0";
@@ -38,8 +38,8 @@ PixelArea *interestArea;
 //   free(rgbPicture);
 //   closeCam(&c);
 // }
-extern "C" {
 void startCam(char *device) {
+  rgbPicture = (int *)malloc(sizeof(int)*WIDTH*HEIGHT);
   initCam(&c, device);
   resetControl(&c, V4L2_CID_BRIGHTNESS);
   resetControl(&c, V4L2_CID_CONTRAST);
@@ -63,11 +63,16 @@ void getInfo() {
 }
 
 int getX() {
+  if(interestArea == NULL) {
+    return 0;
+  }
   return interestArea->getCenter().c;
 }
 
 int getSize() {
+  if(interestArea == NULL) {
+    return 0;
+  }
   return interestArea->getSize();
 }
-
-}}
+}

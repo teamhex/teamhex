@@ -214,7 +214,7 @@ vector<PixelArea> Grabber::findObjectsInImage(int *rgb) {
 	    if (area.getSize() > colorsToFind[k]->minSize) {
 	      areas.push_back(area);
 	      if(area.getSize() > maxArea) {
-		largestArea = &area;
+		largestArea = &areas.back();
 		maxArea = area.getSize();
 	      }
 	    }
