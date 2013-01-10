@@ -26,8 +26,8 @@ def update():
     global pose
     
     #-------------------------Receive Data from Arduino
-    data = ser.receive()
     # data is [Left Encoder, Right Encoder]
+    data = ser.receive()
     
     #-------------------------Update Odometry
     odo.update(data[0],data[1])
