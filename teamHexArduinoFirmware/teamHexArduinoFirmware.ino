@@ -69,13 +69,14 @@ static int dir(int val) {
 
 void setup(){
   Serial.begin(1000000);
-  //establishContact();
+  
+  // Motors
   pinMode(LMotorDirPin,OUTPUT);
   pinMode(RMotorDirPin,OUTPUT);
   digitalWrite(LMotorDirPin,HIGH);
   digitalWrite(RMotorDirPin,LOW);
-  int commandL = 0;
-  int commandR = 0;
+  commandL = 0;
+  commandR = 0;
    
   // Quadrature encoders
   // Left encoder
@@ -85,7 +86,6 @@ void setup(){
   digitalWrite(LeftEncoderPinB, LOW);  // turn on pullup resistors
   attachInterrupt(LeftEncoderIntA, HandleLeftMotorInterruptA, CHANGE);
   attachInterrupt(LeftEncoderIntB, HandleLeftMotorInterruptB, CHANGE);
-  
   // Right encoder
   pinMode(RightEncoderPinA, INPUT);      // sets pin A as input
   digitalWrite(RightEncoderPinA, LOW);  // turn on pullup resistors
@@ -97,6 +97,7 @@ void setup(){
 
 void loop(){
   serRead();
+  writeEncoderVals();
   commandL = map(lIn,0,255,-255,255);
   commandR = map(rIn,0,255,-255,255);
   commandMotors(commandL, commandR);
