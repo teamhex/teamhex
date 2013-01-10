@@ -29,6 +29,9 @@ int initCam(struct cam *c, char *device) {
   // capture needs to be enabled on camera.
   c->captureEnabled = 0;
 
+  // Allocate buffer
+  c->buffer = malloc(WIDTH*HEIGHT*2);
+
   // Opens file
   if((c->fd = open(device, O_RDWR)) == -1) {
     return -1;
@@ -147,12 +150,14 @@ int capture(struct cam *c, int *buffer) {
   if(ioctl(c->fd, VIDIOC_DQBUF, &c->buf) < 0) {
     return -1;
   }
-  // Get result from camera and convert it to RGB.
-  YUYVtoRGB(c->mem[c->buf.index], WIDTH, HEIGHT, buffer);
+  // Get result from camera
+  memcpy(c->buffer, c->mem[c->buf.index], c->buf.bytesused);
   // Queue buffer back
   if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
     return -1;
   }
+  // Convert it to RGB.
+  YUYVtoRGB(c->mem[c->buf.index], WIDTH, HEIGHT, buffer);
   return 0;
 }
 
@@ -200,31 +205,36 @@ void saveRGB(int *info, const char *filename) {
   fclose(fp);
 }
 
-int main() {
-  char *device = (char *)"/dev/video0";
-  int *rgbPicture = (int *)malloc(WIDTH*HEIGHT*sizeof(int));
-  struct cam c;
-  initCam(&c, device);
-  resetControl(&c, V4L2_CID_BRIGHTNESS);
-  resetControl(&c, V4L2_CID_CONTRAST);
-  resetControl(&c, V4L2_CID_SATURATION);
-  resetControl(&c, V4L2_CID_GAIN);
-  PixelGrid grid(HEIGHT,WIDTH);
-  grid.setPixels(rgbPicture);
-  capture(&c,rgbPicture);
-  Grabber g = Grabber(WIDTH, HEIGHT);
-  g.findObjectsInImage(rgbPicture);
-  vector<const ColorParameters*> colors;
-  colors.push_back(&g.COLOR_PURPLE);
-  Position p = g.getCenterOfLargestArea(colors, rgbPicture);
-  printf("%d %d\n", p.l, p.c);
-  for(int i = 0; i < 10; ++i) {
-    capture(&c,rgbPicture);
-    g.findObjectsInImage(rgbPicture);
-    p = g.getCenterOfLargestArea(colors,rgbPicture);
-    printf("%d %d\n", p.l, p.c);
-  }
-  saveRGB(rgbPicture, "snap");
-  free(rgbPicture);
-  closeCam(&c);
+void *getCam() {
+  void *c = malloc(sizeof(struct cam))
+  return c;
 }
+
+// int main() {
+//   char *device = (char *)"/dev/video0";
+//   int *rgbPicture = (int *)malloc(WIDTH*HEIGHT*sizeof(int));
+//   struct cam c;
+//   initCam(&c, device);
+//   resetControl(&c, V4L2_CID_BRIGHTNESS);
+//   resetControl(&c, V4L2_CID_CONTRAST);
+//   resetControl(&c, V4L2_CID_SATURATION);
+//   resetControl(&c, V4L2_CID_GAIN);
+//   PixelGrid grid(HEIGHT,WIDTH);
+//   grid.setPixels(rgbPicture);
+//   capture(&c,rgbPicture);
+//   Grabber g = Grabber(WIDTH, HEIGHT);
+//   g.findObjectsInImage(rgbPicture);
+//   vector<const ColorParameters*> colors;
+//   colors.push_back(&g.COLOR_PURPLE);
+//   Position p = g.getCenterOfLargestArea(colors, rgbPicture);
+//   printf("%d %d\n", p.l, p.c);
+//   for(int i = 0; i < 10; ++i) {
+//     capture(&c,rgbPicture);
+//     g.findObjectsInImage(rgbPicture);
+//     p = g.getCenterOfLargestArea(colors,rgbPicture);
+//     printf("%d %d\n", p.l, p.c);
+//   }
+//   saveRGB(rgbPicture, "snap");
+//   free(rgbPicture);
+//   closeCam(&c);
+// }

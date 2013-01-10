@@ -12,6 +12,7 @@ struct cam {
   struct v4l2_buffer buf;
   struct v4l2_requestbuffers rb;
   void *mem[NBUFFERS];
+  void *buffer;
   char captureEnabled;
 };
 
