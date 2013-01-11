@@ -7,11 +7,9 @@ using namespace std;
 #define IS_VALID(POS,W,H) (((POS).l<(H)) && ((POS).l>=0) && ((POS).c<(W)) && ((POS).c>=0))
 #define NNEIGHBORS 8
 
-double angleDistance(double a1, double a2);
-
 struct Position {
-  int l;
-  int c;
+  long l;
+  long c;
 
   Position();
   Position(int line, int column);
@@ -32,6 +30,7 @@ class Pixel {
   Position p;
 
  public:
+  bool inQueue;
   Pixel *neighbors[NNEIGHBORS];
   int nNeighbors;
 
@@ -43,7 +42,8 @@ class Pixel {
   int getHue();
   int getSat();
   int getLight();
-
+  struct hsl getHSL();
+  
   Position getPosition();
 };
 
@@ -78,15 +78,19 @@ class PixelArea {
   int size;
   Position center;
   bool centerSet;
+  vector<Pixel> pixels;
+
  public:
-  vector<Pixel*> pixels;
   int hue;
   int minX, maxX, minY, maxY;
 
+  PixelArea();
   PixelArea(int hue, Pixel &startPixel, int tolerance);
+  PixelArea(Pixel &startPixel, int maxDiff);
   int getSize();
   Position getCenter();
   void addPixel(Pixel *pixel);
+  void color(int *rgbPicture, int color);
 };
 
 // Search image and find areas with interesting hues.
@@ -95,17 +99,17 @@ class Grabber {
   const int width, height;
   PixelGrid pixels;
   vector<const ColorParameters*> colorsToFind;
-  vector<PixelArea> areas;
   PixelArea *largestArea;
   
  public:
+  vector<PixelArea*> areas;
   const ColorParameters COLOR_GREEN;
-  //const ColorParameters COLOR_RED;
-  //const ColorParameters COLOR_PURPLE;
-  //const ColorParameters COLOR_YELLOW;
+  const ColorParameters COLOR_RED;
+  const ColorParameters COLOR_PURPLE;
+  const ColorParameters COLOR_YELLOW;
   Grabber(int w, int h);
 
-  vector<PixelArea> findObjectsInImage(int *rgb);
+  void findObjectsInImage(int *rgb);
   
   PixelArea *getLargestArea();
   double getProportionalHorizontalOffset(int x);

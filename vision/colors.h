@@ -9,6 +9,9 @@ struct hsl {
   int h;
   int s;
   int l;
+
+  int amplitudeSqr();
+  struct hsl operator -(const struct hsl &b);
 };
 
 void YUYVtoRGB(const void *yuvStream, int width, int height, int *buffer);

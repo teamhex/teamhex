@@ -1,3 +1,4 @@
+#include "general.h"
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
@@ -157,7 +158,7 @@ int capture(struct cam *c, int *buffer) {
     return -1;
   }
   // Convert it to RGB.
-  YUYVtoRGB(c->mem[c->buf.index], WIDTH, HEIGHT, buffer);
+  YUYVtoRGB(c->buffer, WIDTH, HEIGHT, buffer);
   return 0;
 }
 
@@ -204,6 +205,44 @@ void saveRGB(int *info, const char *filename) {
   }
   fclose(fp);
 }
+
+// int main() {
+//         /* set framerate */
+//       struct v4l2_streamparm* setfps;  
+//       setfps=(struct v4l2_streamparm *) calloc(1, sizeof(struct v4l2_streamparm));
+//       memset(setfps, 0, sizeof(struct v4l2_streamparm));
+//       setfps->type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+//       // Convert the frame rate into a fraction for V4L2
+//       int n = 0, d = 0;
+//       float_to_fraction(vd->fps, &n, &d);
+//       setfps->parm.capture.timeperframe.numerator = d;
+//       setfps->parm.capture.timeperframe.denominator = n;
+
+//       ret = ioctl(vd->fd, VIDIOC_S_PARM, setfps);
+//       if(ret == -1) {
+//             perror("Unable to set frame rate");
+//             goto fatal;
+//       }
+//       ret = ioctl(vd->fd, VIDIOC_G_PARM, setfps); 
+//       if(ret == 0) {
+//             float confirmed_fps = (float)setfps->parm.capture.timeperframe.denominator / (float)setfps->parm.capture.timeperframe.numerator;
+//             if (confirmed_fps != (float)n / (float)d) {
+//                   printf("  Frame rate:   %g fps (requested frame rate %g fps is "
+//                         "not supported by device)\n",
+//                         confirmed_fps,
+//                         vd->fps);
+//                   vd->fps = confirmed_fps;
+//             }
+//             else {
+//                   printf("  Frame rate:   %g fps\n", vd->fps);
+//             }
+//       }
+//       else {
+//             perror("Unable to read out current frame rate");
+//             goto fatal;
+//       }
+// }
 
 // int main() {
 //   char *device = (char *)"/dev/video1";

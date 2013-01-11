@@ -1,9 +1,7 @@
 #ifndef CAPTURE_H
 #define CAPTURE_H
 
-#define NBUFFERS 16
-#define WIDTH 320
-#define HEIGHT 240
+#define NBUFFERS 1
 
 // Useful structure with all the necessary information about the camera
 struct cam {

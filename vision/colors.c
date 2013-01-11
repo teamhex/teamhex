@@ -1,6 +1,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "colors.h"
+#include "general.h"
+
+int hsl::amplitudeSqr() {
+  return h*h+s*s+l*l;
+}
+
+struct hsl hsl::operator -(const struct hsl &b) {
+  struct hsl res;
+  res.h = h-b.h;
+  res.s = s-b.s;
+  res.l = l-b.l;
+  return res;
+}
 
 void YUYVtoRGB(const void *yuvStream, int width, int height, int *buffer) {
   unsigned char *yuyv = (unsigned char *)yuvStream;
