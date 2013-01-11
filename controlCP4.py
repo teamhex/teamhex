@@ -92,17 +92,21 @@ def commandMotors(lPWM,rPWM):
     robot.send(sendIt)
 
 def getBallPose():
-    #TODO: implement this
-    return vision.getBallPose()
+    out =  vision.getBallPose()
+    print out
+    if(out[2]<10):
+        out = [320/2,60,3600]
+    return out
 
 def main():
     camRes = [320,240]
     ballPose = [0,0,0] #X, Y, Area
-    xTroller = PIDController( mykP = .25, mykI = 0.0005, mykD = 0.001)
+    xTroller = PIDController( mykP = 1, mykI = 0.01, mykD = 0)
     xTroller.setDesired(camRes[0]/2)
-    aTroller = PIDController(mykP = .05, mykI = 0.00005, mykD = 0)
+    aTroller = PIDController(mykP = .02, mykI = 0, mykD = 0)
     aTroller.setDesired(3600)
     command = 0
+    vision.init()
     while(True):
         ball = getBallPose()
         xCommand = xTroller.update(ball[0])

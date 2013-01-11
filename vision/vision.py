@@ -1,15 +1,23 @@
 import ctypes
 import time
 
-myCam = ctypes.CDLL('capture.so')
-myCam.startCam("/dev/video1")
-myCam.enableCam()
-print "Calibrating Camera..."
-time.sleep(1)
-myCam.getInfo()
-print myCam.getX()
-print myCam.getSize()
-myCam.stopCam()
-
+myCam = ctypes.CDLL('vision/capture.so')
+    
+def init():
+    global myCam
+    myCam.startCam("/dev/video7")
+    myCam.enableCam()
+    print "Calibrating Camera..."
+    time.sleep(1)
+    
 def getBallPose():
-    return [320/2,60,3500]
+    global myCam
+    print "before"
+    myCam.getInfo()
+    print "after"
+    return [myCam.getX(),60,myCam.getSize()]
+
+def test():
+    init()
+    print getBallPose()
+    myCam.stopCam()
