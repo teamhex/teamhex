@@ -1,15 +1,15 @@
-#include "general.h"
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "capture.h"
-#include "colors.h"
 #include <unistd.h>
 #include <fcntl.h>
-#include "pixel.h"
+
+#include "general.h"
+#include "colors.h"
+#include "capture.h"
 
 /*
   Initializes the camera drivers and the cam structure.
@@ -19,7 +19,7 @@
   Returns 0 on success, -1 on failure.
 */
 
-int initCam(struct cam *c, char *device) {
+int initCam(struct cam *c, const char *device) {
   int i;
 
   // Check if input is valid.
@@ -76,7 +76,7 @@ int initCam(struct cam *c, char *device) {
       return -1;
     }
   }
-  for(i = 0; i < NBUFFERS; ++i) {
+  /*for(i = 0; i < NBUFFERS; ++i) {
     memset(&c->buf, 0, sizeof(struct v4l2_buffer));
     c->buf.index = i;
     c->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -84,7 +84,7 @@ int initCam(struct cam *c, char *device) {
     if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
       return -1;
     }
-  }
+    }*/
   return 0;
 }
 
@@ -147,18 +147,22 @@ int capture(struct cam *c, int *buffer) {
   memset(&c->buf, 0, sizeof(struct v4l2_buffer));
   c->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   c->buf.memory = V4L2_MEMORY_MMAP;
+  // Queue buffer
+  if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
+    return -1;
+  }
   // Dequeue buffer
   if(ioctl(c->fd, VIDIOC_DQBUF, &c->buf) < 0) {
     return -1;
   }
   // Get result from camera
-  memcpy(c->buffer, c->mem[c->buf.index], c->buf.bytesused);
-  // Queue buffer back
+  //memcpy(c->buffer, c->mem[c->buf.index], c->buf.bytesused);
+  /*// Queue buffer back
   if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
     return -1;
-  }
+    }*/
   // Convert it to RGB.
-  YUYVtoRGB(c->buffer, WIDTH, HEIGHT, buffer);
+  YUYVtoRGB(c->mem[c->buf.index], WIDTH, HEIGHT, buffer);
   return 0;
 }
 
@@ -242,34 +246,4 @@ void saveRGB(int *info, const char *filename) {
 //             perror("Unable to read out current frame rate");
 //             goto fatal;
 //       }
-// }
-
-// int main() {
-//   char *device = (char *)"/dev/video1";
-//   int *rgbPicture = (int *)malloc(WIDTH*HEIGHT*sizeof(int));
-//   struct cam c;
-//   initCam(&c, device);
-//   resetControl(&c, V4L2_CID_BRIGHTNESS);
-//   resetControl(&c, V4L2_CID_CONTRAST);
-//   resetControl(&c, V4L2_CID_SATURATION);
-//   resetControl(&c, V4L2_CID_GAIN);
-//   PixelGrid grid(HEIGHT,WIDTH);
-//   grid.setPixels(rgbPicture);
-//   capture(&c,rgbPicture);
-//   Grabber g = Grabber(WIDTH, HEIGHT);
-//   g.findObjectsInImage(rgbPicture);
-//   vector<const ColorParameters*> colors;
-//   colors.push_back(&g.COLOR_GREEN);
-//   Position p = g.getCenterOfLargestArea(colors, rgbPicture);
-//   saveRGB(rgbPicture, "snap");
-//   printf("%d %d\n", p.l, p.c);
-//   for(int i = 0; i < 1000; ++i) {
-//     capture(&c,rgbPicture);
-//     g.findObjectsInImage(rgbPicture);
-//     p = g.getCenterOfLargestArea(colors,rgbPicture);
-//     saveRGB(rgbPicture, "snap");
-//     printf("%d %d\n", p.l, p.c);
-//   }
-//   free(rgbPicture);
-//   closeCam(&c);
 // }

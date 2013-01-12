@@ -1,278 +1,165 @@
-using namespace std;
+#include <string.h>
+#include <stdlib.h>
+
 #include "general.h"
 #include "pixel.h"
-#include <cstdio>
-#include <cstring>
-#include <cstdlib>
 
-Position::Position() {}
+extern "C" {
+#include "colors.h"
+}
+
+int hslPicture[HEIGHT][WIDTH];
+bool visited[HEIGHT][WIDTH];
+Position *queue[WIDTH*HEIGHT];
+int front,back;
+int count = 0;
+PixelArea *area;
+
+PixelArea *largestArea;
+
+Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
+int allnNeighbors[HEIGHT][WIDTH];
+
+Position::Position(): l(0),c(0) {}
 Position::Position(int line, int column): l(line),c(column) {}
 
-ColorParameters::ColorParameters(int h, int t, int mS): hue(h),tolerance(t),minSize(mS) {}
-
-//Individual Pixel class
-Pixel::Pixel(const Position &p, int rgb): inQueue(false) {
-  hslValues = RGBtoHSL(rgb);
-  memcpy(&(this->p), &p, sizeof(Position));
-  area = false;
-  nNeighbors = 0;
+HueMatcher::HueMatcher(int h, int t): hue(h), tolerance(t) {}
+bool HueMatcher::operator ()(Position *start, Position *neighbor) {
+  return ANGLE_DIST(hue,hslPicture[neighbor->l][neighbor->c]>>14) < tolerance;
 }
 
-void Pixel::addNeighbor(Pixel *neigh) {
-  if(neigh != NULL && neigh != this) { // make sure neighbor is valid and isn't self
-    neighbors[nNeighbors++] = neigh;
-  }
+// Checks if two HSL vectors are similar.
+// HSL vector: least significant 7 bits are light, next 7 are saturation, next are hue
+// Strategy: subtract and see if resulting vector's magnitude is withing threshold
+GroupMatcher::GroupMatcher(int t): tolerance(t) {}
+bool GroupMatcher::operator ()(Position *current, Position *neighbor) {
+  int dh,ds,dl;
+  int v1 = hslPicture[current->l][current->c];
+  int v2 = hslPicture[neighbor->l][neighbor->c];
+  dh = (v1>>14) - (v2>>14);
+  ds = ((v1>>7)&BIT7) - ((v2>>7)&BIT7);
+  dl = (v1&BIT7)-(v2&BIT7);
+
+  return (dh*dh+ds*ds+dl*dl) < (tolerance*tolerance);
 }
 
-void Pixel::setArea() {
-  area = true;
-}
+HueMatcher COLOR_GREEN = HueMatcher(125,20);
+HueMatcher COLOR_RED = HueMatcher(350,20);
+HueMatcher COLOR_PURPLE = HueMatcher(25,10);
+HueMatcher COLOR_YELLOW = HueMatcher(255,10);
 
-bool Pixel::inArea() {
-  return area;
-}
+GroupMatcher GROUP = GroupMatcher(5);
 
-int Pixel::getHue() {
-  return hslValues.h;
-}
-
-int Pixel::getSat() {
-  return hslValues.s;
-}
-
-int Pixel::getLight() {
-  return hslValues.l;
-}
-
-struct hsl Pixel::getHSL() {
-  return hslValues;
-}
-
-Position Pixel::getPosition() {
-  return p;
-}
-
-// Pixel grid class
-PixelLine::PixelLine(int width, int line) {
-  this->width = width;
-  this->line = line;
-  data = (Pixel *)malloc(sizeof(Pixel)*width);
-}
-
-void PixelLine::setPixels(int *rgbLine) {
-  Pixel *dataPtr = data;
-  Position p;
-  p.l = line;
-  for(int *i = rgbLine; i < (rgbLine+width); ++i) {
-    p.c = i-rgbLine;
-    *(dataPtr++) = Pixel(p, *i);
-  }
-}
-
-Pixel &PixelLine::operator [](int c) {
-  return data[c];
-}
-
-PixelGrid::PixelGrid(int height, int width) {
-  this->width = width;
-  this->height = height;
-  data = (PixelLine*)malloc(sizeof(PixelLine)*height);
-  for(int i = 0; i < height; ++i) {
-    data[i] = PixelLine(width, i);
-  }
-}
-
-void PixelGrid::setNeighbors(const Position &p) {
-  Pixel &origin = data[p.l][p.c];
-  if(!IS_VALID(p,width,height)) {
-    return;
-  }
-  Position neighbors[NNEIGHBORS] = {
-    Position(p.l-1,p.c-1),
-    Position(p.l-1,p.c),
-    Position(p.l-1,p.c+1),
-    Position(p.l,p.c-1),
-    Position(p.l,p.c+1),
-    Position(p.l+1,p.c-1),
-    Position(p.l+1,p.c),
-    Position(p.l+1,p.c+1)
+void setNeighbors(Position &p) {
+  allnNeighbors[p.l][p.c] = 0;
+  Position *possibleNeighbors[NNEIGHBORS] = {
+    new Position(p.l-1,p.c-1),
+    new Position(p.l-1,p.c),
+    new Position(p.l-1,p.c+1),
+    new Position(p.l,p.c-1),
+    new Position(p.l,p.c+1),
+    new Position(p.l+1,p.c-1),
+    new Position(p.l+1,p.c),
+    new Position(p.l+1,p.c+1)
   };
   for(int i = 0; i < NNEIGHBORS; ++i) {
-    if(IS_VALID(neighbors[i],width,height)) {
-      origin.addNeighbor(&(data[neighbors[i].l][neighbors[i].c]));
+    if(IS_VALID(*possibleNeighbors[i],WIDTH,HEIGHT)) {
+      allNeighbors[p.l][p.c][allnNeighbors[p.l][p.c]++] = possibleNeighbors[i];
+    }
+    else {
+      delete possibleNeighbors[i];
     }
   }
 }
 
-void PixelGrid::setPixels(int *rgbGrid) {
-  Position p;
-  for(int i = 0; i < height; ++i) {
-    data[i].setPixels(rgbGrid);
-    rgbGrid += width;
+void setArea(Position *start, Matcher &matches) {
+  if(visited[start->l][start->l] || !matches(start, start)) {
+    area = NULL;
+    return;
   }
-  for(int l = 0; l < height; ++l) {
-    for(int c = 0; c < width; ++c) {
-      p = Position(l,c);
+  int nNeighbors;
+  Position **neighbors;
+  Position *neigh,*current;
+  int curHSL;
+
+  area = new PixelArea();
+  area->start = start;
+  area->size = 0;
+  area->center.l = 0;
+  area->center.c = 0;
+  
+  front = back = 0;
+  queue[back++] = start;
+  visited[start->l][start->c] = true;
+
+  while(back > front) {
+    current = queue[front++];
+    curHSL = hslPicture[(current)->l][(current)->c];
+
+    ++area->size;
+    area->center.l += (current)->l;
+    area->center.c += (current)->c;
+    area->hue += curHSL>>14;
+
+    nNeighbors = allnNeighbors[current->l][current->c];
+    neighbors = allNeighbors[current->l][current->c];
+    
+    for(int i = 0; i < nNeighbors; ++i) {
+      neigh = neighbors[i];
+      
+      if(matches((current), neigh) && !visited[neigh->l][neigh->c]) {
+	queue[back++] = neigh;
+	visited[neigh->l][neigh->c] = true;
+	++count;
+      }
+    }
+  }
+
+  area->center.l /= area->size;
+  area->center.c /= area->size;
+  area->hue /= area->size;
+}
+
+void startNeighbors() {
+  Position p;
+  for(p.l = 0; p.l < HEIGHT; ++p.l) {
+    for(p.c = 0; p.c < WIDTH; ++p.c) {
       setNeighbors(p);
     }
   }
 }
 
-PixelLine &PixelGrid::operator [](int l) {
-  return data[l];
-}
-
-// Area of similar pixels, PixelArea
-PixelArea::PixelArea(): pixels(vector<Pixel>()) {}
-Pixel* q[WIDTH*HEIGHT];
-PixelArea::PixelArea(int hue, Pixel &startPixel, int tolerance): center(Position(0,0)),
-								 pixels(vector<Pixel>()) {
-  this->hue = hue;
-  Position p = startPixel.getPosition();
-  minX = p.c;
-  maxX = p.c;
-  minY = p.l;
-  maxY = p.l;
-  size = 0;
-
-  int queueStartPos = 0;
-  int queueBackPos = 0;
-  q[queueBackPos++] = &startPixel;
-  
-  Pixel *pixel;
-  while (queueBackPos > queueStartPos) {
-    pixel = q[queueStartPos++];
-    pixels.push_back(*pixel);
-    pixel->inQueue = false;
-    pixel->setArea();
-    addPixel(pixel);
-    for(int i = 0; i < pixel->nNeighbors; ++i) {
-      Pixel *neigh = pixel->neighbors[i];
-      if(!(neigh->inArea()) && !(neigh->inQueue) && ANGLE_DIST(neigh->getHue(),hue) < tolerance && pixel->getSat() >= 0) {
-	neigh->inQueue = true;
-	q[queueBackPos++] = neigh;
-      }
-    }
-  }
-  center.c /= size;
-  center.l /= size;
-}
-
-PixelArea::PixelArea(Pixel &startPixel, int maxDiff): center(Position(0,0)),
-						      pixels(vector<Pixel>()) {
-  hue = 0;
-  Position p = startPixel.getPosition();
-  minX = p.c;
-  maxX = p.c;
-  minY = p.l;
-  maxY = p.l;
-  size = 0;
-
-  int queueStartPos = 0;
-  int queueBackPos = 0;
-  q[queueBackPos++] = &startPixel;
-
-  Pixel *pixel;
-  while(queueBackPos > queueStartPos) {
-    pixel = q[queueStartPos++];
-    //pixels.push_back(*pixel);
-    pixel->inQueue = false;
-    pixel->setArea();
-    addPixel(pixel);
-    hue += pixel->getHue();
-    for(int i = 0; i < pixel->nNeighbors; ++i) {
-      Pixel *neigh = pixel->neighbors[i];
-      if(!(neigh->inArea()) && !(neigh->inQueue) && (neigh->getHSL()-pixel->getHSL()).amplitudeSqr() < maxDiff*maxDiff) {
-	neigh->inQueue = true;
-	q[queueBackPos++] = neigh;
-      }
-    }
-  }
-  center.c /= size;
-  center.l /= size;
-  hue /= size;
-}
-
-int PixelArea::getSize() {
-  return size;
-}
-
-Position PixelArea::getCenter() {
-  return center;
-}
-
-void PixelArea::addPixel(Pixel *pixel) {
-  Position p = pixel->getPosition();
-  minX = MIN(p.l,minX);
-  maxX = MAX(p.l,maxX);
-  minY = MIN(p.c,minY);
-  maxY = MAX(p.c,maxY);
-  center.c += p.c;
-  center.l += p.l;
-  ++size;
-}
-
-void PixelArea::color(int *rgbPicture, int color) {
-  for(vector<Pixel>::iterator i = pixels.begin(); i != pixels.end(); ++i) {
-    Position p = i->getPosition();
-    rgbPicture[p.l*WIDTH+p.c] = color;
-  }
-}
-
-// Search image and find areas with interesting hues
-Grabber::Grabber(int w, int h): width(w),height(h),pixels(PixelGrid(h,w)),
-				COLOR_GREEN(ColorParameters(125, 10, 1000)),
-				COLOR_RED(ColorParameters(350, 10, 1000)),
-				COLOR_PURPLE(ColorParameters(25, 10, 5000)),
-				COLOR_YELLOW(ColorParameters(255, 10, 5000)) {
-
-  colorsToFind.push_back(&COLOR_PURPLE);
-  colorsToFind.push_back(&COLOR_GREEN);
-  colorsToFind.push_back(&COLOR_RED);
-  colorsToFind.push_back(&COLOR_YELLOW);
-}
-
-void Grabber::findObjectsInImage(int *rgb) {
-  // Sets the RGB and HSL values for every pixel
-  int minSize = 1000;
-  int tolerance = 5;
+void findObjectsInImage(int *rgb, Matcher &matches) {
+  int maxSize = -1;
   largestArea = NULL;
-  int maxArea = 0;
-  for(vector<PixelArea*>::iterator i = areas.begin(); i != areas.end(); ++i) {
-    delete (*i);
-  }
-  areas.clear();
-  pixels.setPixels(rgb);
-  // Finds areas in the picture which are of the same hue
-  for (int i = 0; i < width; i++) {
-    for (int j = 0; j < height; j++) {
-      if (!pixels[j][i].inArea()) {
-	//for (unsigned int k = 0; k < colorsToFind.size(); k++) {
-	//if(ANGLE_DIST(pixels[j][i].getHue(), colorsToFind[k]->hue) < colorsToFind[k]->tolerance
-	//   && pixels[j][i].getSat() >= 0) {
-	PixelArea *area = new PixelArea(/*colorsToFind[k]->hue,*/ pixels[j][i], /*colorsToFind[k]->*/tolerance);
+  memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
 
-	// Only if the area is large enough then we care
-	// about it
-	if (area->getSize() > /*colorsToFind[k]->*/minSize) {
-	  areas.push_back(area);
-	  if(area->getSize() > maxArea) {
-	    largestArea = area;
-	    maxArea = area->getSize();
+  for(int l = 0; l < HEIGHT; ++l) {
+    for(int c = 0; c < WIDTH; ++c) {
+      hslPicture[l][c] = RGBtoHSL(rgb[l*WIDTH+c]);
+    }
+  }
+  for(int l = 0; l < HEIGHT; ++l) {
+    for(int c = 0; c < WIDTH; ++c) {
+      setArea(new Position(l,c), matches);
+      if(area != NULL) {
+	if(area->size > maxSize) {
+	  if(maxSize != -1) {
+	    delete largestArea->start;
+	    delete largestArea;
 	  }
+	  maxSize = area->size;
+	  largestArea = area;
 	}
-	//break;
-	//  }
-	//}
+	else {
+	  delete area->start;
+	  delete area;
+	}
       }
     }
   }
 }
 
-PixelArea *Grabber::getLargestArea() {
+PixelArea *getLargestArea() {
   return largestArea;
-}
-
-double Grabber::getProportionalHorizontalOffset(int x) {
-  return (1.0-x/(width/2.0));
 }

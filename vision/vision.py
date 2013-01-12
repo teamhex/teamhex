@@ -1,7 +1,7 @@
 import ctypes
 import time
 
-myCam = ctypes.CDLL('./capture.so')
+myCam = ctypes.CDLL('./vision/capture.so')
     
 def init():
     global myCam
@@ -13,12 +13,12 @@ def init():
 def getBallPose():
     global myCam
     myCam.getInfo()
-    #return [myCam.getX(),60,myCam.getSize()]
+    return [myCam.getX(),60,myCam.getSize()]
 
 def test():
     init()
     for i in xrange(100):
-        getBallPose()
+        print getBallPose()
     myCam.stopCam()
 
-test()
+#test()

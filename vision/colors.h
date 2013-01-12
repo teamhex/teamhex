@@ -5,16 +5,7 @@
 #define MIN(I,J) ((I)<(J)?(I):(J))
 #define CLAMP(V) (((V)>255)?255:(((V)<0)?0:(V)))
 
-struct hsl {
-  int h;
-  int s;
-  int l;
-
-  int amplitudeSqr();
-  struct hsl operator -(const struct hsl &b);
-};
-
 void YUYVtoRGB(const void *yuvStream, int width, int height, int *buffer);
-struct hsl RGBtoHSL(int rgbValue);
+int RGBtoHSL(int rgbValue);
 
 #endif

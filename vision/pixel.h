@@ -1,119 +1,70 @@
 #ifndef PIXEL_H
 #define PIXEL_H
 
-using namespace std;
-#include "colors.h"
-#include <vector>
 #define IS_VALID(POS,W,H) (((POS).l<(H)) && ((POS).l>=0) && ((POS).c<(W)) && ((POS).c>=0))
 #define NNEIGHBORS 8
+#define BIT7 (0b1111111)
 
-struct Position {
-  long l;
-  long c;
+class Position {
+ public:
+  int l;
+  int c;
 
   Position();
   Position(int line, int column);
 };
 
-struct ColorParameters {
-  const int hue;
-  const int tolerance;
-  const int minSize;
-
-  ColorParameters(int h, int t, int mS);
+// Abstract class for creating tests on whether an edge between current and neighbor exists.
+class Matcher {
+ public:
+  virtual bool operator ()(Position *current, Position *neighbor) = 0;
 };
 
-class Pixel {
- private:
-  bool area;
-  struct hsl hslValues;
-  Position p;
-
- public:
-  bool inQueue;
-  Pixel *neighbors[NNEIGHBORS];
-  int nNeighbors;
-
-  Pixel(const Position &p, int rgb);
-  void addNeighbor(Pixel *neigh);
-  void setArea();
-  bool inArea();
-
-  int getHue();
-  int getSat();
-  int getLight();
-  struct hsl getHSL();
-  
-  Position getPosition();
-};
-
-// Pixel grid class
-class PixelLine {
- private:
-  int width, line;
-  Pixel *data;
-
- public:
-  PixelLine(int width, int line);
-  void setPixels(int *rgbLine);
-  Pixel &operator [](int c);
-};
-
-class PixelGrid {
- private:
-  int width, height;
-  PixelLine *data;
-  
-  void setNeighbors(const Position &p);
-
- public:
-  PixelGrid(int height, int width);
-  void setPixels(int *rgbGrid);
-  PixelLine &operator [](int l);
-};
-
-// Area of similar pixels
-class PixelArea {
- private:
-  int size;
-  Position center;
-  bool centerSet;
-  vector<Pixel> pixels;
-
- public:
+// Pixels are included if they're in a specific hue range
+class HueMatcher: public Matcher {
+private:
   int hue;
-  int minX, maxX, minY, maxY;
-
-  PixelArea();
-  PixelArea(int hue, Pixel &startPixel, int tolerance);
-  PixelArea(Pixel &startPixel, int maxDiff);
-  int getSize();
-  Position getCenter();
-  void addPixel(Pixel *pixel);
-  void color(int *rgbPicture, int color);
+  int tolerance;
+  
+public:
+  HueMatcher(int h, int t);
+  bool operator ()(Position *current, Position *neighbor);
 };
 
-// Search image and find areas with interesting hues.
-class Grabber {
- private:
-  const int width, height;
-  PixelGrid pixels;
-  vector<const ColorParameters*> colorsToFind;
-  PixelArea *largestArea;
-  
+// Pixels are included if they're similar to their neighbors
+class GroupMatcher: public Matcher {
+private:
+  int tolerance;
+public:
+  GroupMatcher(int t);
+  bool operator ()(Position *current, Position *neighbor);
+};
+
+extern HueMatcher COLOR_GREEN;
+extern HueMatcher COLOR_RED;
+extern HueMatcher COLOR_PURPLE;
+extern HueMatcher COLOR_YELLOW;
+
+extern GroupMatcher GROUP;
+
+class PixelArea {
  public:
-  vector<PixelArea*> areas;
-  const ColorParameters COLOR_GREEN;
-  const ColorParameters COLOR_RED;
-  const ColorParameters COLOR_PURPLE;
-  const ColorParameters COLOR_YELLOW;
-  Grabber(int w, int h);
-
-  void findObjectsInImage(int *rgb);
-  
-  PixelArea *getLargestArea();
-  double getProportionalHorizontalOffset(int x);
+  Position *start;
+  int size;
+  int hue;
+  Position center;
 };
 
+// Given a position, set the neighbors array with valid neighboring position
+void setNeighbors(Position &p);
+
+// Sets the area starting at position start with pixels obeying matches condition.
+void setArea(Position *start, Matcher &matches);
+
+void startNeighbors();
+
+void findObjectsInImage(int *rgb, Matcher &matches);
+
+PixelArea *getLargestArea();
 
 #endif

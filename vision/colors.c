@@ -1,19 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "colors.h"
+
 #include "general.h"
-
-int hsl::amplitudeSqr() {
-  return h*h+s*s+l*l;
-}
-
-struct hsl hsl::operator -(const struct hsl &b) {
-  struct hsl res;
-  res.h = h-b.h;
-  res.s = s-b.s;
-  res.l = l-b.l;
-  return res;
-}
+#include "colors.h"
 
 void YUYVtoRGB(const void *yuvStream, int width, int height, int *buffer) {
   unsigned char *yuyv = (unsigned char *)yuvStream;
@@ -39,15 +28,15 @@ void YUYVtoRGB(const void *yuvStream, int width, int height, int *buffer) {
       z = 0;
       yuyv += 4;
     }
-    buffer[i] = (r<<16)+(g<<8)+b;
+    buffer[i] = (r<<16)|(g<<8)|b;
   }
 }
 
-struct hsl RGBtoHSL(int rgbValue) {
+int RGBtoHSL(int rgbValue) {
   double r,g,b;
   double h,s,l;
   double maxVal,minVal,maxDelta;
-  struct hsl res;
+  int finalH, finalS, finalL;
 
   r = ((rgbValue>>16)&0xFF) / 255.0;
   g = ((rgbValue>>8)&0xFF) / 255.0;
@@ -87,10 +76,10 @@ struct hsl RGBtoHSL(int rgbValue) {
       h -= 1;
     }
   }
-  res.h = (int) (h*360);
-  res.s = (int) (s*100);
-  res.l = (int) (l*100);
-  if(res.h > 360)
+  finalH = (int) (h*360);
+  finalS = (int) (s*100);
+  finalL = (int) (l*100);
+  if(finalH > 360)
     printf("Total chaos oO\n");
-  return res;
+  return (finalH<<14) | (finalS<<7) | finalL;
 }

@@ -14,7 +14,7 @@ struct cam {
   char captureEnabled;
 };
 
-int initCam(struct cam *c, char *device);
+int initCam(struct cam *c, const char *device);
 int enableCapture(struct cam *c);
 int disableCapture(struct cam *c);
 void closeCam(struct cam *c);
