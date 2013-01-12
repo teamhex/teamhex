@@ -81,5 +81,5 @@ int RGBtoHSL(int rgbValue) {
   finalL = (int) (l*100);
   if(finalH > 360)
     printf("Total chaos oO\n");
-  return (finalH<<14) | (finalS<<7) | finalL;
+  return (finalH<<14) | (finalS<<7)&BIT7 | finalL&BIT7;
 }

@@ -3,7 +3,11 @@
 
 #define IS_VALID(POS,W,H) (((POS).l<(H)) && ((POS).l>=0) && ((POS).c<(W)) && ((POS).c>=0))
 #define NNEIGHBORS 8
-#define BIT7 (0b1111111)
+
+/** remove **/
+extern int hslPicture[HEIGHT][WIDTH];
+extern bool visited[HEIGHT][WIDTH];
+/** end remove **/
 
 class Position {
  public:
@@ -63,7 +67,9 @@ void setArea(Position *start, Matcher &matches);
 
 void startNeighbors();
 
-void findObjectsInImage(int *rgb, Matcher &matches);
+void startHSL(int *rgb);
+
+void findObjectsInImage(Matcher &matches);
 
 PixelArea *getLargestArea();
 

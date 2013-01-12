@@ -37,18 +37,18 @@ bool GroupMatcher::operator ()(Position *current, Position *neighbor) {
   int v1 = hslPicture[current->l][current->c];
   int v2 = hslPicture[neighbor->l][neighbor->c];
   dh = (v1>>14) - (v2>>14);
-  ds = ((v1>>7)&BIT7) - ((v2>>7)&BIT7);
+  //ds = ((v1>>7)&BIT7) - ((v2>>7)&BIT7);
   dl = (v1&BIT7)-(v2&BIT7);
 
-  return (dh*dh+ds*ds+dl*dl) < (tolerance*tolerance);
+  return (dh*dh+ds*ds+dl*dl) < tolerance;
 }
 
-HueMatcher COLOR_GREEN = HueMatcher(125,20);
-HueMatcher COLOR_RED = HueMatcher(350,20);
-HueMatcher COLOR_PURPLE = HueMatcher(25,10);
-HueMatcher COLOR_YELLOW = HueMatcher(255,10);
+HueMatcher COLOR_GREEN = HueMatcher(140,30);
+HueMatcher COLOR_RED = HueMatcher(350,30);
+HueMatcher COLOR_PURPLE = HueMatcher(25,30);
+HueMatcher COLOR_YELLOW = HueMatcher(64,30);
 
-GroupMatcher GROUP = GroupMatcher(5);
+GroupMatcher GROUP = GroupMatcher(30);
 
 void setNeighbors(Position &p) {
   allnNeighbors[p.l][p.c] = 0;
@@ -129,16 +129,19 @@ void startNeighbors() {
   }
 }
 
-void findObjectsInImage(int *rgb, Matcher &matches) {
-  int maxSize = -1;
-  largestArea = NULL;
-  memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
-
+void startHSL(int *rgb) {
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
       hslPicture[l][c] = RGBtoHSL(rgb[l*WIDTH+c]);
     }
   }
+}  
+
+void findObjectsInImage(Matcher &matches) {
+  int maxSize = -1;
+  largestArea = NULL;
+  memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
+
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
       setArea(new Position(l,c), matches);

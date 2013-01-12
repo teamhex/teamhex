@@ -76,7 +76,7 @@ int initCam(struct cam *c, const char *device) {
       return -1;
     }
   }
-  /*for(i = 0; i < NBUFFERS; ++i) {
+  for(i = 0; i < NBUFFERS; ++i) {
     memset(&c->buf, 0, sizeof(struct v4l2_buffer));
     c->buf.index = i;
     c->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -84,7 +84,7 @@ int initCam(struct cam *c, const char *device) {
     if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
       return -1;
     }
-    }*/
+  }
   return 0;
 }
 
@@ -147,22 +147,22 @@ int capture(struct cam *c, int *buffer) {
   memset(&c->buf, 0, sizeof(struct v4l2_buffer));
   c->buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   c->buf.memory = V4L2_MEMORY_MMAP;
-  // Queue buffer
+  /*// Queue buffer
   if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
     return -1;
-  }
+    }*/
   // Dequeue buffer
   if(ioctl(c->fd, VIDIOC_DQBUF, &c->buf) < 0) {
     return -1;
   }
   // Get result from camera
-  //memcpy(c->buffer, c->mem[c->buf.index], c->buf.bytesused);
-  /*// Queue buffer back
+  memcpy(c->buffer, c->mem[c->buf.index], c->buf.bytesused);
+  // Queue buffer back
   if(ioctl(c->fd, VIDIOC_QBUF, &c->buf) < 0) {
     return -1;
-    }*/
+  }
   // Convert it to RGB.
-  YUYVtoRGB(c->mem[c->buf.index], WIDTH, HEIGHT, buffer);
+  YUYVtoRGB(c->buffer, WIDTH, HEIGHT, buffer);
   return 0;
 }
 
