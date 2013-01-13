@@ -7,5 +7,10 @@
 
 void YUYVtoRGB(const void *yuvStream, int width, int height, int *buffer);
 int RGBtoHSL(int rgbValue);
+int RGBtoLab(int rgbValue);
+
+int LabDiffSqr(int lab1, int lab2);
+
+void blur(int *rgb);
 
 #endif

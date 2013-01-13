@@ -5,7 +5,6 @@
 #define NNEIGHBORS 8
 
 /** remove **/
-extern int hslPicture[HEIGHT][WIDTH];
 extern bool visited[HEIGHT][WIDTH];
 /** end remove **/
 
@@ -36,11 +35,29 @@ public:
 };
 
 // Pixels are included if they're similar to their neighbors
-class GroupMatcher: public Matcher {
-private:
+class GroupHSLMatcher: public Matcher {
+ private:
   int tolerance;
-public:
-  GroupMatcher(int t);
+ public:
+  GroupHSLMatcher(int t);
+  bool operator ()(Position *current, Position *neighbor);
+};
+
+class LABMatcher: public Matcher {
+ private:
+  int labColor;
+  int tolerance;
+
+ public:
+  LABMatcher(int lC, int t);
+  bool operator ()(Position *current, Position *neighbor);
+};
+
+class GroupLABMatcher: public Matcher {
+ private:
+  int tolerance;
+ public:
+  GroupLABMatcher(int t);
   bool operator ()(Position *current, Position *neighbor);
 };
 
@@ -49,7 +66,11 @@ extern HueMatcher COLOR_RED;
 extern HueMatcher COLOR_PURPLE;
 extern HueMatcher COLOR_YELLOW;
 
-extern GroupMatcher GROUP;
+extern LABMatcher LAB_RED;
+extern LABMatcher LAB_GREEN;
+
+extern GroupHSLMatcher HSL_GROUP;
+extern GroupLABMatcher LAB_GROUP;
 
 class PixelArea {
  public:
@@ -68,6 +89,8 @@ void setArea(Position *start, Matcher &matches);
 void startNeighbors();
 
 void startHSL(int *rgb);
+
+void startLAB(int *rgb);
 
 void findObjectsInImage(Matcher &matches);
 

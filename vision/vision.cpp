@@ -63,40 +63,14 @@ void stopCam() {
   closeCam(&c);
 }
 
-class DrawingMatcher: public Matcher {
+// Matcher that is givena a matcher and draws on the matching cells.
+class DrawMatcher: public Matcher {
 private:
-  int hue;
-  int tolerance;
+  Matcher *matches;
 public:
-  DrawingMatcher(int h, int t): hue(h), tolerance(t) {}
-  bool operator ()(Position *start, Position *neighbor) {
-    if(ANGLE_DIST(hue, hslPicture[neighbor->l][neighbor->c]>>14) < tolerance) {
-      rgbPictureMeh[neighbor->l*WIDTH+neighbor->c] = 0;
-      return true;
-    }
-    else {
-      return false;
-    }
-  }
-};
-
-// Checks if two HSL vectors are similar.
-// HSL vector: least significant 7 bits are light, next 7 are saturation, next are hue
-// Strategy: subtract and see if resulting vector's magnitude is withing threshold
-class DrawGroup: public Matcher {
-private:
-  int tolerance;
-public:
-  DrawGroup(int t): tolerance(t) {}
+  DrawMatcher(Matcher *m): matches(m) {}
   bool operator ()(Position *current, Position *neighbor) {
-    int dh,ds,dl;
-    int v1 = hslPicture[current->l][current->c];
-    int v2 = hslPicture[neighbor->l][neighbor->c];
-    dh = (v1>>14) - (v2>>14);
-    ds = ((v1>>7)&BIT7) - ((v2>>7)&BIT7);
-    dl = (v1&BIT7)-(v2&BIT7);
-    
-    if( (dh*dh+ds*ds+dl*dl) < tolerance) {
+    if((*matches)(current, neighbor)) {
       rgbPictureMeh[neighbor->l*WIDTH+neighbor->c] = 0;
       return true;
     }
@@ -106,11 +80,7 @@ public:
   }
 };
 
-DrawGroup GROUP_DRAW = DrawGroup(30);
-
-DrawingMatcher GREEN_DRAW = DrawingMatcher(140,20);
-DrawingMatcher RED_DRAW = DrawingMatcher(350,20);
-DrawingMatcher YELLOW_DRAW = DrawingMatcher(64,20);
+DrawMatcher m = DrawMatcher(&MATCHER);
 
 void getInfo() {
   //capture(&c,rgbPicture);
@@ -125,12 +95,30 @@ void getInfo() {
   pthread_mutex_lock(&pictureLock);
   memcpy(rgbPictureMeh, rgbPicture, sizeof(int)*WIDTH*HEIGHT);
   pthread_mutex_unlock(&pictureLock);
-
+  
+  blur(rgbPictureMeh);
   startHSL(rgbPictureMeh);
-  findObjectsInImage(GROUP);
+  m = DrawMatcher(&COLOR_GREEN);
+  findObjectsInImage(COLOR_GREEN);
   interestArea = getLargestArea();
-  memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
-  setArea(interestArea->start, GROUP_DRAW);
+  if(interestArea != NULL) {
+    memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
+    setArea(interestArea->start, m);
+  }
+  m = DrawMatcher(&COLOR_RED);
+  findObjectsInImage(COLOR_RED);
+  interestArea = getLargestArea();
+  if(interestArea != NULL) {
+    memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
+    setArea(interestArea->start, m);
+  }
+  m = DrawMatcher(&COLOR_YELLOW);
+  findObjectsInImage(COLOR_YELLOW);
+  interestArea = getLargestArea();
+  if(interestArea != NULL) {
+    memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
+    setArea(interestArea->start, m);
+  }
   saveRGB(rgbPictureMeh, "tmp/snap");
   //int col = 255;
   //int color = col;

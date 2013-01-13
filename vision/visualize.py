@@ -14,6 +14,7 @@ init()
 pygame.init()
 fpsClock = pygame.time.Clock()
 
+c.getInfo()
 prev_path = 'tmp/snap'
 live = True
 fullscreen = False
