@@ -10,8 +10,8 @@ import math
 import time
 
 #PI Velocity controllers
-kP = 1
-kI = .1
+kP = .01
+kI = .001
 kD = 0
 lVelTroller = PIDController(kP, kI, kD)
 rVelTroller = PIDController(kP, kI, kD)
@@ -22,10 +22,13 @@ rVel = 0
 dt = 0
 tPrev = 0
 
+forVel = 0
+angVel = 0
+
 kV = 340.32 #Motor voltage constant [RPM/Volt]
 vMax = 12.0 #Maximum motor voltage [volts]
-kG = 1 #Gear Ratio
-rWheel = .5 #Wheel radius [meters]
+kG = 13.5 #Gear Ratio
+rWheel = 3.875 #Wheel radius [inches]
 maxAngVel = kV*vMax/60.0*kG*2.0*math.pi #Max Wheel Angular Velocity in RPM
 
 def limitAngVel(a):
@@ -45,6 +48,21 @@ def limitCommand(var,minVal, maxVal):
     elif var<minVal:
         var = minVal
     return var
+
+def setVels(forVelNew,angVelNew):
+    global forVel
+    global angVel 
+    forVel = forVelNew
+    angVel = angVelNew
+    commandMotors(forVelNew-angVelNew,forVelNew+angVelNew)
+
+def setForVel(x):
+    global angVel
+    setVels(x,angVel)
+    
+def setAngVel(x):
+    global forVel
+    setVels(forVel,x)
     
 def motCmdBytes(x):
     #Converts an input into two bytes to be sent to the Arduino
@@ -61,11 +79,11 @@ def commandMotors(lPWM,rPWM):
     robot.send(sendIt)
     
 def update(dThetaL, dThetaR):
-    dt = time.time()-tPrev #In order to normalize the velocity with respect to time. 
+    #dt = time.time()-tPrev #In order to normalize the velocity with respect to time. 
     #todo: convert dt to [seconds]
     
-    lVel = dThetaL/dt
-    rVel = dThetaR/dt
+    lVel = dThetaL#/dt
+    rVel = dThetaR#/dt
     
     lCommand = lVelTroller.update(lVel)
     rCommand = rVelTroller.update(rVel)

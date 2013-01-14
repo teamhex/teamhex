@@ -17,8 +17,9 @@ theta = 0
 pose = [x,y,theta]
 
 b = 6 #Wheel Base (measured from wheel to center point) [inches]
-rWheel = 3.625 #Wheel radius [inches]
+rWheel = 3.875/2.0 #Wheel radius [inches]
 cpr = 4000.0 #[Encoder counts per revolution]
+kG = 13.5#Gear Ratio
 
 #Previous timestep encoder values
 lEncPrev = 0
@@ -43,10 +44,10 @@ def update(lEnc, rEnc):
     global thetaL
     global thetaR
     
-    dThetaL = (lEnc-lEncPrev)/cpr*2*math.pi
-    dThetaR = (rEnc-rEncPrev)/cpr*2*math.pi
-    thetaL = (lEnc)/cpr*2*math.pi
-    thetaR = (rEnc)/cpr*2*math.pi
+    dThetaL = (lEnc-lEncPrev)/cpr/kG*2*math.pi
+    dThetaR = (rEnc-rEncPrev)/cpr/kG*2*math.pi
+    thetaL = (lEnc)/cpr/kG*2*math.pi
+    thetaR = (rEnc)/cpr/kG*2*math.pi
     
     #Update the angle 
     """
