@@ -4,12 +4,34 @@ Daniel J. Gonzalez
 dgonz@mit.edu
 January 2013
 
-Done: 
+---Wire connections---
+-Motor Controller:
+5V to 5V
+GND to GND
+PWM1 to 8
+DIR1 to 22
+PWM2 to 9
+DIR2 to 23
+-Left Motor:
+Connector to Motor controller plug 1
+Encoder black to 5V
+Encoder lime to GND
+Encoder red to 2
+Encoder white to 3
+-Right Motor:
+Connector to Motor controller plug 1
+Encoder black to 5V
+Encoder lime to GND
+Encoder red to 21
+Encoder white to 20
+
+
+--Done: 
 -Serial Communication with master. Baudrate: 1000000 (One Million)
 -interrupt-driven quadrature decoding for two drive motors.
 -Drive motors with PWM out
 
-ToDo: 
+--ToDo: 
 -Drive Servos with PWM out.
 -Read Analog and Digital sensor feedback and send to master
 */
