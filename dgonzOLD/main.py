@@ -16,7 +16,7 @@ pose = [0,0,0]
 
 
 serPort = "/dev/ttyACM0"
-serBaud = 1000000
+serBaud = 115200
 
 
 def initialize():
