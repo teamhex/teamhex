@@ -78,7 +78,7 @@ void setup(){
   commandL = 0;
   commandR = 0;
   
-  /*
+  
   // Quadrature encoders
   // Left encoder
   pinMode(LeftEncoderPinA, INPUT);      // sets pin A as input
@@ -94,12 +94,12 @@ void setup(){
   digitalWrite(RightEncoderPinB, LOW);  // turn on pullup resistors
   attachInterrupt(RightEncoderIntA, HandleRightMotorInterruptA, CHANGE);
   attachInterrupt(RightEncoderIntB, HandleRightMotorInterruptB, CHANGE);
-  */
+  
 }
 
 void loop(){
   serRead();
-  //writeEncoderVals();
+  writeEncoderVals();
   commandL = lIn;
   commandR = rIn;
   commandMotors(commandL, commandR);
@@ -133,9 +133,9 @@ void serRead(){
 void writeEncoderVals(){
   //TODO: Make better
   Serial.print("S");//Start byte. Line dropped if not present
-  Serial.print(rightEncoderTicks);
-  Serial.print(",");//All data separated by commas
   Serial.print(leftEncoderTicks);
+  Serial.print(",");//All data separated by commas
+  Serial.print(rightEncoderTicks);
   Serial.println("E");
 }
 
@@ -210,16 +210,16 @@ void HandleRightMotorInterruptB(){
 
 int ParseEncoderright(){
   if(rightEncoderAPrev && rightEncoderBPrev){
-    if(!rightEncoderASet && rightEncoderBSet) return 1;
-    if(rightEncoderASet && !rightEncoderBSet) return -1;
-  }else if(!rightEncoderAPrev && rightEncoderBPrev){
-    if(!rightEncoderASet && !rightEncoderBSet) return 1;
-    if(rightEncoderASet && rightEncoderBSet) return -1;
-  }else if(!rightEncoderAPrev && !rightEncoderBPrev){
-    if(rightEncoderASet && !rightEncoderBSet) return 1;
     if(!rightEncoderASet && rightEncoderBSet) return -1;
-  }else if(rightEncoderAPrev && !rightEncoderBPrev){
-    if(rightEncoderASet && rightEncoderBSet) return 1;
+    if(rightEncoderASet && !rightEncoderBSet) return 1;
+  }else if(!rightEncoderAPrev && rightEncoderBPrev){
     if(!rightEncoderASet && !rightEncoderBSet) return -1;
+    if(rightEncoderASet && rightEncoderBSet) return 1;
+  }else if(!rightEncoderAPrev && !rightEncoderBPrev){
+    if(rightEncoderASet && !rightEncoderBSet) return -1;
+    if(!rightEncoderASet && rightEncoderBSet) return 1;
+  }else if(rightEncoderAPrev && !rightEncoderBPrev){
+    if(rightEncoderASet && rightEncoderBSet) return -1;
+    if(!rightEncoderASet && !rightEncoderBSet) return 1;
   }
 }
