@@ -183,23 +183,13 @@ void HandleLeftMotorInterruptA(){
 }
  
 void HandleLeftMotorInterruptB(){
-  if(digitalReadFast(LeftEncoderPinB) ==
-  digitalReadFast(LeftEncoderPinA)) {
-    leftEncoderTicks += 1;
-  }
-  else {
-    leftEncoderTicks -= 1;
-  }
+  // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
+  leftEncoderTicks += 1 - 2*(digitalReadFast(leftEncoderPinB)^digitalReadFast(leftEncoderPinA));
 }
 
 void HandleRightMotorInterruptA(){
-  if(digitalReadFast(RightEncoderPinB) ==
-  digitalReadFast(RightEncoderPinA)) {
-    rightEncoderTicks += 1;
-  }
-  else {
-    rightEncoderTicks -= 1;
-  }
+  // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
+  leftEncoderTicks -= 1 - 2*(digitalReadFast(leftEncoderPinB)^digitalReadFast(leftEncoderPinA));
 }
  
 void HandleRightMotorInterruptB(){
