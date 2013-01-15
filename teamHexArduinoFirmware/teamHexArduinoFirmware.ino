@@ -44,6 +44,11 @@ Encoder white to 20
 // It turns out that the regular digitalRead() calls are too slow and bring the arduino down when
 // I use them in the interrupt routines while the motor runs at full speed.
 
+// Serial
+#define TIMEOUT 1000
+int inBytes = 0;
+char buf[256];
+
 // Quadrature encoders
 // Left encoder
 #define LeftEncoderIntA 0
@@ -116,7 +121,7 @@ void loop(){
   commandL = lIn;
   commandR = rIn;
   commandMotors(commandL, commandR);
-}
+} 
 
 void establishContact() {
   while (Serial.available() <= 0) {
@@ -125,6 +130,42 @@ void establishContact() {
   }
 }
 
+void serReceive() {
+  int cTime;
+
+  while((inByte = Serial.read()) != 'S');
+  cTime = micros();
+  while(!Serial.available() && (micros()-cTime) < TIMEOUT);
+  if(!Serial.available()) {
+    inBytes = 0;
+  }
+  else {
+    inBytes = (int) Serial.read();
+  }
+  Serial.setTimeout((TIMEOUT*inBytes)/1000);
+  Serial.readBytes(buf, inBytes);
+  Serial.write('E');
+}
+
+// Tries to send until it gets a reply confirming it sent the message.
+void serSend(char *msg, char length) {
+  int cTime;
+  bool replied = false;
+  while(!replied) {
+    Serial.write('S');
+    Serial.write(length);
+    for(char *i = msg; (i-msg) < length; ++i) {
+      Serial.write(*i);
+    }
+    cTime = micros();
+    while(!Serial.available() && (micros()-cTime) < TIMEOUT);
+    if(Serial.available() && Serial.read() == 'E') {
+      replied = true;
+    }
+  }
+}
+
+// Tries to read a message. Blocks until it gets an S.
 void serRead(){
   while((inByte = Serial.read()) != 'S');
   while(!Serial.available());
