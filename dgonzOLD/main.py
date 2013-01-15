@@ -15,7 +15,7 @@ debug = True
 pose = [0,0,0]
 
 
-serPort = "/dev/ttyACM0"
+serPort = "/dev/ttyACM1"
 serBaud = 1000000
 
 
@@ -31,7 +31,8 @@ def update():
     
     #-------------------------Update Odometry
     odo.update(data[0],data[1])
-    if(pose != odo.pose && debug):
+    
+    if((pose != odo.pose) and debug):
         pose = odo.pose
         print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
     

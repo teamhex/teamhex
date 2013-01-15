@@ -6,17 +6,17 @@ January 2013
 """
 
 import serial
+import struct
 
 port = '/dev/ttyACM0'
-baud = 400000
+baud = 115200
 ser = serial.Serial()
 
-def initialize(myPort = "/dev/ttyACM0", myBaud = 400000):
+def initialize(myPort = "/dev/ttyACM0", myBaud = 115200):
     global ser
     port = myPort
     baud = myBaud
     ser = serial.Serial(myPort,myBaud)
-    
     
 def sendCommand(command):
     global ser
@@ -24,11 +24,10 @@ def sendCommand(command):
     
 def receive():
     global ser
-    ser.write('E')
     data = ser.readline()
     if(data[0]=='S' and data[len(data)-3]=='E'):
-        data = data[1:len(data)-3].split(',')
-        data = [int(x) for x in data]
+        data = data[1:len(data)-3]
+        data= [struct.unpack('>l',data[0:4])[0],struct.unpack('>l',data[4:8])[0]]
         return data
     else:
         return receive()
