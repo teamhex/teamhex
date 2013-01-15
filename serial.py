@@ -33,20 +33,20 @@ class Serial:
                 self.send(msg)
 
     def receive(self):
-        while True:
-            self.connection.timeout = None
-            buf = ''
-            size = 0
-            while self.connection.read() != 'S':
-                pass
-            self.connection.timeout = 0.001
-            buf = self.connection.read()
-            if(buf != ''):
-                size = ord(buf)
-            buf = ''
-            for i in xrange(size):
-                buf = buf+self.connection.read()
-            self.connection.write('E')
+        self.connection.timeout = None
+        buf = ''
+        size = 0
+        while self.connection.read() != 'S':
+            pass
+        self.connection.timeout = 0.001
+        buf = self.connection.read()
+        if(buf != ''):
+            size = ord(buf)
+        buf = ''
+        for i in xrange(size):
+            buf = buf+self.connection.read()
+        self.connection.write('E')
+        return buf
 
     def stop(self):
         self.connection.close()
