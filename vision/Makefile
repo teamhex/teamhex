@@ -29,4 +29,4 @@ vision:	$(OBJECTS) main.o
 	$(CPP) $(OBJECTS) main.o -o $(APP_BINARY) -lpthread
 
 library:$(OBJECTS)
-	$(CPP) -shared -Wl,-soname,vision -o vision.so $(OBJECTS) -lpthread
+	$(CPP) -shared -Wl,-soname,vision -o _vision.so $(OBJECTS) -lpthread

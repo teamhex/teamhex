@@ -1,7 +1,9 @@
 import ctypes
 import time
+import os
 
-myCam = ctypes.CDLL('./vision.so')
+path = os.path.abspath(__file__)
+myCam = ctypes.CDLL(path+'/_vision.so')
     
 def init():
     global myCam
