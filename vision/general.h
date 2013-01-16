@@ -7,6 +7,7 @@
 #define BIT8 0xFF
 #define RADIUS 10
 #define MATCHER COLOR_GREEN
+#define MIN_AREA_SIZE 1000
 
 // Useful macros
 #define MAX(I,J) ((I)>(J)?(I):(J))

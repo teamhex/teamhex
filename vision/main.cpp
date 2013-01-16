@@ -8,8 +8,8 @@ int main(int argc, char **argv) {
     device = argv[1];
   }
   printf("Starting capture and tracking on device %s\n", device.c_str());
-  startCam(device.c_str());
-  enableCam();
+  //startCam(device.c_str());
+  //enableCam();
   for(int i = 0; i < 500; ++i) {
     getInfo();
     printf("%d %d\n", getX(), getSize());

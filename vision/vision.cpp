@@ -85,6 +85,7 @@ DrawMatcher m = DrawMatcher(&MATCHER);
 void getInfo() {
   //capture(&c,rgbPicture);
   // Wait for new picture!
+  newPicture = true;
   if(!newPicture) {
     pthread_mutex_lock(&newPictureLock);
     pthread_cond_wait(&newPictureCond, &newPictureLock);
@@ -93,8 +94,10 @@ void getInfo() {
   }
   
   pthread_mutex_lock(&pictureLock);
-  memcpy(rgbPictureMeh, rgbPicture, sizeof(int)*WIDTH*HEIGHT);
+  //memcpy(rgbPictureMeh, rgbPicture, sizeof(int)*WIDTH*HEIGHT);
   pthread_mutex_unlock(&pictureLock);
+
+  memset(rgbPictureMeh, 0, sizeof(int)*WIDTH*HEIGHT);
   
   blur(rgbPictureMeh);
   startHSL(rgbPictureMeh);

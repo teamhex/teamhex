@@ -20,7 +20,7 @@ class Position {
 // Abstract class for creating tests on whether an edge between current and neighbor exists.
 class Matcher {
  public:
-  virtual bool operator ()(Position *current, Position *neighbor) = 0;
+  virtual bool operator ()(int current, int neighbor) = 0;
 };
 
 // Pixels are included if they're in a specific hue range
@@ -31,7 +31,7 @@ private:
   
 public:
   HueMatcher(int h, int t);
-  bool operator ()(Position *current, Position *neighbor);
+  bool operator ()(int current, int neighbor);
 };
 
 // Pixels are included if they're similar to their neighbors
@@ -40,7 +40,7 @@ class GroupHSLMatcher: public Matcher {
   int tolerance;
  public:
   GroupHSLMatcher(int t);
-  bool operator ()(Position *current, Position *neighbor);
+  bool operator ()(int current, int neighbor);
 };
 
 class LABMatcher: public Matcher {
@@ -50,7 +50,7 @@ class LABMatcher: public Matcher {
 
  public:
   LABMatcher(int lC, int t);
-  bool operator ()(Position *current, Position *neighbor);
+  bool operator ()(int current, int neighbor);
 };
 
 class GroupLABMatcher: public Matcher {
@@ -58,7 +58,15 @@ class GroupLABMatcher: public Matcher {
   int tolerance;
  public:
   GroupLABMatcher(int t);
-  bool operator ()(Position *current, Position *neighbor);
+  bool operator ()(int current, int neighbor);
+};
+
+class MultiHueMatcher: public Matcher {
+ private:
+  bool allowed[360];
+ public:
+  MultiHueMatcher();
+  bool operator ()(int current, int neighbor);
 };
 
 extern HueMatcher COLOR_GREEN;
@@ -84,7 +92,7 @@ class PixelArea {
 void setNeighbors(Position &p);
 
 // Sets the area starting at position start with pixels obeying matches condition.
-void setArea(Position *start, Matcher &matches);
+void setArea(Position *start, Matcher &matches, int *picture);
 
 void startNeighbors();
 
