@@ -10,8 +10,8 @@ import math
 import time
 
 #PI Velocity controllers
-kP = .01
-kI = .001
+kP = .5
+kI = .01
 kD = 0
 lVelTroller = PIDController(kP, kI, kD)
 rVelTroller = PIDController(kP, kI, kD)
@@ -38,7 +38,7 @@ def limitAngVel(a):
         a = -1*maxAngVel
     return a
 
-def commandMotors(vL = 0, vR = 0):
+def serVels(vL = 0, vR = 0):
     lVelTroller.setDesired(limitAngVel(vl))
     rVelTroller.setDesired(limitAngVel(vr))
     
@@ -54,7 +54,7 @@ def setVels(forVelNew,angVelNew):
     global angVel 
     forVel = forVelNew
     angVel = angVelNew
-    commandMotors(forVelNew-angVelNew,forVelNew+angVelNew)
+    setVels(forVelNew-angVelNew,forVelNew+angVelNew)
 
 def setForVel(x):
     global angVel
@@ -73,18 +73,18 @@ def motCmdBytes(x):
     elif x<0:
         return chr(abs(x))+chr(0)
 
-def commandMotors(lPWM,rPWM):
+def getMotorCommandBytes(lPWM,rPWM):
     #send a command to motors. Commands can range from -255 to 255
-    sendIt = motCmdBytes(lPWM)+motCmdBytes(rPWM)
-    robot.send(sendIt)
+    return motCmdBytes(lPWM)+motCmdBytes(rPWM)
     
 def update(dThetaL, dThetaR):
-    #dt = time.time()-tPrev #In order to normalize the velocity with respect to time. 
+    global tPrev
+    dt = time.time()-tPrev #In order to normalize the velocity with respect to time. 
     #todo: convert dt to [seconds]
     
-    lVel = dThetaL#/dt
-    rVel = dThetaR#/dt
-    
+    lVel = dThetaL/dt
+    rVel = dThetaR/dt
+    #print lVel
     lCommand = lVelTroller.update(lVel)
     rCommand = rVelTroller.update(rVel)
     

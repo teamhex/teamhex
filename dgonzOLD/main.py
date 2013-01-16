@@ -15,7 +15,7 @@ debug = True
 pose = [0,0,0]
 
 
-serPort = "/dev/ttyACM1"
+serPort = "/dev/arduino_encoders"
 serBaud = 1000000
 
 
@@ -28,7 +28,7 @@ def update():
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receive()
-    
+    #print data
     #-------------------------Update Odometry
     odo.update(data[0],data[1])
     
@@ -40,10 +40,12 @@ def update():
     [dThetaL, dThetaR] = odo.getVel()
     #Make sure gear ratio is taken into account
     [lCommand, rCommand] = mot.update(dThetaL, dThetaR)
+    #print [lCommand,rCommand]
+    #ser.sendCommand(getMotorCommandBytes(lCommand,rCommand))
 
 def main():
     initialize()
     while(True):
         update()
-        
+
 main()
