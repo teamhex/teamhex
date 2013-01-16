@@ -127,7 +127,8 @@ void loop(){
 
 void serReceive() {
   int cTime;
-
+  
+  Serial.write('R');
   while((inByte = Serial.read()) != 'S');
   cTime = micros();
   while(!Serial.available() && (micros()-cTime) < TIMEOUT);
@@ -139,7 +140,6 @@ void serReceive() {
   }
   Serial.setTimeout((TIMEOUT*inBytes)/1000);
   Serial.readBytes(buf, inBytes);
-  Serial.write('E');
 }
 
 // Tries to send until it gets a reply confirming it sent the message.
@@ -147,12 +147,13 @@ void serSend(char *msg, char length) {
   //int cTime;
   //bool replied = false;
   //while(!replied) {
-    Serial.write('S');
-    Serial.write(length);
-    for(char *i = msg; (i-msg) < length; ++i) {
-      Serial.write(*i);
-    }
-    while(Serial.read() != 'E');
+  while(Serial.read() != 'R');
+  Serial.write('S');
+  Serial.write(length);
+  for(char *i = msg; (i-msg) < length; ++i) {
+    Serial.write(*i);
+  }
+  while(Serial.read() != 'E');
     //cTime = micros();
     //while(!Serial.available() && (micros()-cTime) < TIMEOUT);
     //if(Serial.available() && Serial.read() == 'E') {
