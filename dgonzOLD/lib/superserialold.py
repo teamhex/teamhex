@@ -1,5 +1,13 @@
+"""
+Super Serial
+Rodrigo T. Gomes
+rgomes@mit.edu
+January 2013
+"""
+
 import os
 import serial
+import time
 
 class Serial:
     def __init__(self, baudrate=115200, prestring='/dev/ttyACM'):
@@ -31,6 +39,7 @@ class Serial:
                 if(self.connection.read() == 'E'):
                     replied = True
             except:
+                print 'here'
                 time.sleep(2)
                 self.connect()
                 self.send(msg)
@@ -54,3 +63,17 @@ class Serial:
     def stop(self):
         self.connection.close()
 
+def test():
+    s = Serial(baudrate = 1000000)
+    print 'Connecting'
+    s.connect(port = '/dev/ttyACM0')
+    print 'connected'
+    i = 0
+    while(True):
+        msg = 'aasdsadasdadsasakjsahdkjashdjkhasd'
+        s.send(msg)
+        print 'sent'
+        if s.receive() != msg:
+            i = i+1
+            print i
+            raw_input()

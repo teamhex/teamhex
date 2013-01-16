@@ -22,9 +22,12 @@ class PIDController():
         self.kI = mykI
     def setKD(self,mykD):
         self.kD = mykD
-    def setDesired (self,myxDesired):
+    def setDesired (self,myxDesired,reset = False):
         self.xDesired = myxDesired
-        #self.xErrorIntegral = 0
+        if (reset):
+            self.xErrorIntegral = 0
+    def getDesired(self):
+        return self.xDesired
     def update(self,xSense):
         self.xError = self.xDesired - xSense
         self.dXError = self.xError - self.xErrorPrevious

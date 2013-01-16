@@ -5,29 +5,25 @@ dgonz@mit.edu
 January 2013
 """
 
-import serial
+import lib.superserial as serial
 import struct
 
-port = '/dev/ttyACM0'
-baud = 115200
-ser = serial.Serial()
-
-def initialize(myPort = "/dev/ttyACM0", myBaud = 115200):
-    global ser
-    port = myPort
-    baud = myBaud
-    ser = serial.Serial(myPort,myBaud)
+def initialize(encPort = '/dev/arduino_encoders',motPort = '/dev/arduino_control', myBaud = 115200):
+    global serEnc
+    global serMot
+    serEnc = serial.Serial(myBaud)
+    serEnc.connect(port=encPort)
+    serMot = serial.Serial(myBaud)
+    serMot.connect(port=motPort)
+    print "connected!"
     
 def sendCommand(command):
-    global ser
-    ser.write(command)
+    global serMot
+    serMot.send(command)
     
 def receive():
-    global ser
-    data = ser.readline()
-    if(data[0]=='S' and data[len(data)-3]=='E'):
-        data = data[1:len(data)-3]
-        data= [struct.unpack('>l',data[0:4])[0],struct.unpack('>l',data[4:8])[0]]
-        return data
-    else:
-        return receive()
+    global serEnc
+    while True:
+        data = serEnc.receive()
+        if(len(data) == 8):
+            return [struct.unpack('>l',data[0:4])[0],struct.unpack('>l',data[4:8])[0]]

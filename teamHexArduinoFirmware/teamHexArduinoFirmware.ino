@@ -116,19 +116,14 @@ void setup(){
 }
 
 void loop(){
-  //serRead();
   writeEncoderVals();
-  commandL = lIn;
-  commandR = rIn;
-  commandMotors(commandL, commandR);
+  //getMotorCommands();
+  //serReceive();
+  //serSend(buf, inBytes);
+  //commandL = lIn;
+  //commandR = rIn;
+  //commandMotors(commandL, commandR);
 } 
-
-void establishContact() {
-  while (Serial.available() <= 0) {
-    Serial.print('A');   // send a capital A
-    delay(300);
-  }
-}
 
 void serReceive() {
   int cTime;
@@ -149,20 +144,21 @@ void serReceive() {
 
 // Tries to send until it gets a reply confirming it sent the message.
 void serSend(char *msg, char length) {
-  int cTime;
-  bool replied = false;
-  while(!replied) {
+  //int cTime;
+  //bool replied = false;
+  //while(!replied) {
     Serial.write('S');
     Serial.write(length);
     for(char *i = msg; (i-msg) < length; ++i) {
       Serial.write(*i);
     }
-    cTime = micros();
-    while(!Serial.available() && (micros()-cTime) < TIMEOUT);
-    if(Serial.available() && Serial.read() == 'E') {
-      replied = true;
-    }
-  }
+    while(Serial.read() != 'E');
+    //cTime = micros();
+    //while(!Serial.available() && (micros()-cTime) < TIMEOUT);
+    //if(Serial.available() && Serial.read() == 'E') {
+      //replied = true;
+    //}
+  //}
 }
 
 // Tries to read a message. Blocks until it gets an S.
@@ -181,28 +177,24 @@ void serRead(){
   //while(!Serial.available());
 }
 
-void writeEncoderVals(){
-  char le1,le2,le3,le4,re1,re2,re3,re4;
-  le1 = leftEncoderTicks>>24;
-  le2 = (leftEncoderTicks>>16)&0xFF;
-  le3 = (leftEncoderTicks>>8)&0xFF;
-  le4 = leftEncoderTicks&0xFF;
-  
-  re1 = rightEncoderTicks>>24;
-  re2 = (rightEncoderTicks>>16)&0xFF;
-  re3 = (rightEncoderTicks>>8)&0xFF;
-  re4 = rightEncoderTicks&0xFF;
+void getMotorCommands(){
+  serReceive();
+}
 
-  Serial.write('S');//Start byte. Line dropped if not present
-  Serial.write(le1);
-  Serial.write(le2);
-  Serial.write(le3);
-  Serial.write(le4);
-  Serial.write(re1);
-  Serial.write(re2);
-  Serial.write(re3);
-  Serial.write(re4);
-  Serial.println("E");
+void writeEncoderVals(){
+  char eV[8];
+  char le1,le2,le3,le4,re1,re2,re3,re4;
+  eV[0] = leftEncoderTicks>>24;
+  eV[1] = (leftEncoderTicks>>16)&0xFF;
+  eV[2] = (leftEncoderTicks>>8)&0xFF;
+  eV[3] = leftEncoderTicks&0xFF;
+  
+  eV[4] = rightEncoderTicks>>24;
+  eV[5] = (rightEncoderTicks>>16)&0xFF;
+  eV[6] = (rightEncoderTicks>>8)&0xFF;
+  eV[7] = rightEncoderTicks&0xFF;
+
+  serSend(eV, 8);
 }
 
 void commandMotors(int lCommand,int rCommand){
@@ -214,31 +206,21 @@ void commandMotors(int lCommand,int rCommand){
 
 // Interrupt service routines for the left motor's quadrature encoder
 void HandleLeftMotorInterruptA(){
-  if(digitalReadFast(LeftEncoderPinB) ==
-  digitalReadFast(LeftEncoderPinA)) {
-    leftEncoderTicks -= 1;
-  }
-  else {
-    leftEncoderTicks += 1;
-  }
+  // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
+  leftEncoderTicks -= 1 - 2*(digitalReadFast(LeftEncoderPinB)^digitalReadFast(LeftEncoderPinA));
 }
  
 void HandleLeftMotorInterruptB(){
   // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
-  leftEncoderTicks += 1 - 2*(digitalReadFast(leftEncoderPinB)^digitalReadFast(leftEncoderPinA));
+  leftEncoderTicks += 1 - 2*(digitalReadFast(LeftEncoderPinB)^digitalReadFast(LeftEncoderPinA));
 }
 
 void HandleRightMotorInterruptA(){
   // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
-  leftEncoderTicks -= 1 - 2*(digitalReadFast(leftEncoderPinB)^digitalReadFast(leftEncoderPinA));
+  rightEncoderTicks += 1 - 2*(digitalReadFast(RightEncoderPinB)^digitalReadFast(RightEncoderPinA));
 }
  
 void HandleRightMotorInterruptB(){
-  if(digitalReadFast(RightEncoderPinB) ==
-  digitalReadFast(RightEncoderPinA)) {
-    rightEncoderTicks -= 1;
-  }
-  else {
-    rightEncoderTicks += 1;
-  }
+  // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
+  rightEncoderTicks -= 1 - 2*(digitalReadFast(RightEncoderPinB)^digitalReadFast(RightEncoderPinA));
 }

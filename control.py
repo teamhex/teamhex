@@ -1,84 +1,59 @@
 import os
-import serial
+from superserial import *
 import time
 
-class Serial:
-    def __init__(self, baudrate=115200, prestring='/dev/ttyACM'):
-        self.baudrate = baudrate
-        self.prestring = prestring
-        self.connection = None
+robot = Serial(baudrate=1000000)
+robot.connect(port="/dev/arduino_control")
 
-    def connect(self, port = '/dev/ttyACM1'):
-        if self.connection is not None:
-            self.connection.close()
-            self.connection = None
-        if port == None:
-            for i in range(0,10):
-                port = self.prestring+str(i)
-                if os.path.exists(self.prestring+str(i)):
-                    break
-        self.connection = serial.Serial(port)
-        self.connection.baudrate = self.baudrate
-        self.connection.rtscts = True
 
-    def send(self, msg):
-        try:
-            print "Sending"
-            self.connection.write('S' + str(msg) + 'E')
-            self.connection.flushOutput()
-            print 'S' + str(msg) + 'E'
-        except:
-            time.sleep(2)
-            self.connect()
-            self.send(msg)
+def limitCommand(var,minVal, maxVal):
+    if var>maxVal:
+        var = maxVal
+    elif var<minVal:
+        var = minVal
+    return var
+    
+def motCmdBytes(x):
+    #Converts an input into two bytes to be sent to the Arduino
+    #input commands can be from [-255 : 255]
+    x = limitCommand(int(x),-255,255)
+    if x>=0:
+        return chr(0)+chr(x)
+    elif x<0:
+        return chr(abs(x))+chr(0)
 
-    def receive(self, size=1):
-        while True:
-            while self.connection.read() != 'S':
-                pass
-            buf = ''
-            for i in xrange(size):
-                buf = buf+self.connection.read()
-            if self.connection.read() == 'E':
-                return buf
+def commandMotors(lPWM,rPWM):
+    #send a command to motors. Commands can range from -255 to 255
+    sendIt = motCmdBytes(lPWM)+motCmdBytes(rPWM)
+    robot.send(sendIt)
 
-    def stop(self):
-        self.connection.close()
 
-robot = Serial()
-robot.connect()
-
-ZERO = 127
+ZERO = 0
 def goForward():
-    robot.send( chr(ZERO+70) + chr(ZERO+70))
+    commandMotors(70,70)
 def goBack():
-    robot.send( chr(ZERO-70) + chr(ZERO-70))
+    commandMotors(-70,-70)
 def stop():
-    robot.send( chr(ZERO) + chr(ZERO))
+    commandMotors(0,0)
 def turnLeft():
-    robot.send( chr(ZERO+50) + chr(ZERO-50))
+    commandMotors(-50,50)
 def turnRight():
-    robot.send( chr(ZERO-50) + chr(ZERO+50))
+    commandMotors(50,-50)
 def disconnect():
     robot.stop()
 
-# actions = {
-#     'f': goForward,
-#     'b': goBack,
-#     's': stop,
-#     'l': turnLeft,
-#     'r': turnRight,
-#     }
-# while True:
-#     a = raw_input()
-#     if a in actions:
-#         actions[a]()
-#     elif a == 'q':
-#         disconnect()
-#         break
-
-goForward()
-robot.receive()
-turnRight()
-time.sleep(5)
-stop()
+actions = {
+    'f': goForward,
+    'b': goBack,
+    's': stop,
+    'l': turnLeft,
+    'r': turnRight,
+    }
+while True:
+    a = raw_input()
+    if a in actions:
+        actions[a]()
+    elif a == 'q':
+        stop()
+        disconnect()
+        break
