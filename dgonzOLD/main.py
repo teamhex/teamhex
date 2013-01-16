@@ -26,7 +26,6 @@ def update():
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receive()
-    
     #print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
