@@ -31,15 +31,13 @@ class Serial:
     def send(self, msg):
         replied = False
         #try:
-        self.connection.timeout = None
-        # Wait for a request first.
-        while(self.connection.read() != 'R'):
-            pass
-        self.connection.write('S' + chr(len(msg)) + str(msg))
-        self.connection.flushOutput()
-        self.connection.timeout = 0.01
-        #if(self.connection.read() == 'E'):
-        #    replied = True
+        while not replied:
+            self.connection.timeout = None
+            self.connection.write('S' + chr(len(msg)) + str(msg))
+            self.connection.flushOutput()
+            self.connection.timeout = 0.01
+            if(self.connection.read() == 'E'):
+                replied = True
         #except:
         #    print 'here'
         #    time.sleep(2)
@@ -50,8 +48,6 @@ class Serial:
         self.connection.timeout = None
         buf = ''
         size = 0
-        # Send a request
-        self.connect.write('R')
         while self.connection.read() != 'S':
             pass
         self.connection.timeout = 0.01
@@ -61,7 +57,7 @@ class Serial:
         buf = ''
         for i in xrange(size):
             buf = buf+self.connection.read()
-        #self.connection.write('E')
+        self.connection.write('E')
         return buf
 
     def stop(self):
