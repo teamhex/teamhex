@@ -31,18 +31,18 @@ class Serial:
     def send(self, msg):
         replied = False
         while not replied:
-            #try:
-            self.connection.timeout = None
-            self.connection.write('S' + chr(len(msg)) + str(msg))
-            self.connection.flushOutput()
-            self.connection.timeout = 0.01
-            if(self.connection.read() == 'E'):
-                replied = True
-            #except:
-            #    print 'here'
-            #    time.sleep(2)
-            #    self.connect()
-            #    self.send(msg)
+            try:
+                self.connection.timeout = None
+                self.connection.write('S' + chr(len(msg)) + str(msg))
+                self.connection.flushOutput()
+                self.connection.timeout = 0.001
+                if(self.connection.read() == 'E'):
+                    replied = True
+            except:
+                print 'here'
+                time.sleep(2)
+                self.connect()
+                self.send(msg)
 
     def receive(self):
         self.connection.timeout = None

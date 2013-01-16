@@ -9,13 +9,6 @@ from lib.PIDControlModule import PIDController
 import math
 import time
 
-#PI Velocity controllers
-kP = .5
-kI = .01
-kD = 0
-lVelTroller = PIDController(kP, kI, kD)
-rVelTroller = PIDController(kP, kI, kD)
-
 #Wheel velocities in [rad/second]
 lVel = 0 
 rVel = 0 
@@ -27,9 +20,20 @@ angVel = 0
 
 kV = 340.32 #Motor voltage constant [RPM/Volt]
 vMax = 12.0 #Maximum motor voltage [volts]
+b = 6 #Wheel Base (measured from wheel to center point) [inches]
 kG = 13.5 #Gear Ratio
-rWheel = 3.875 #Wheel radius [inches]
+dWheel = 3.8625 #Wheel diameter [inches]
 maxAngVel = kV*vMax/60.0*kG*2.0*math.pi #Max Wheel Angular Velocity in RPM
+
+#PI Velocity controllers
+
+conv=256/(vMax*kV)*(60)/(2*math.pi) #[PWM/(rad/s)]
+kP = conv*10
+kI = .1*kP
+kD = 0
+lVelTroller = PIDController(kP, kI, kD)
+rVelTroller = PIDController(kP, kI, kD)
+balanceTroller = PIDController(mykP = .04, mykI = 0, mykD = 0)
 
 def limitAngVel(a):
     if a>maxAngVel:
@@ -38,9 +42,10 @@ def limitAngVel(a):
         a = -1*maxAngVel
     return a
 
-def serVels(vL = 0, vR = 0):
-    lVelTroller.setDesired(limitAngVel(vl))
-    rVelTroller.setDesired(limitAngVel(vr))
+def setVels(vL = 0, vR = 0):
+    lVelTroller.setDesired(limitAngVel(vL))
+    rVelTroller.setDesired(limitAngVel(vR))
+    balanceTroller.setDesired(rVelTroller.getDesired()-lVelTroller.getDesired())
     
 def limitCommand(var,minVal, maxVal):
     if var>maxVal:
@@ -49,20 +54,20 @@ def limitCommand(var,minVal, maxVal):
         var = minVal
     return var
 
-def setVels(forVelNew,angVelNew):
+def setAngForVels(forVelNew,angVelNew):
     global forVel
     global angVel 
-    forVel = forVelNew
-    angVel = angVelNew
+    forVel = forVelNew*2.0/dWheel
+    angVel = angVelNew*2.0/dWheel*b
     setVels(forVelNew-angVelNew,forVelNew+angVelNew)
 
 def setForVel(x):
     global angVel
-    setVels(x,angVel)
+    setAngForVels(x,angVel)
     
 def setAngVel(x):
     global forVel
-    setVels(forVel,x)
+    setAngForVels(forVel,x)
     
 def motCmdBytes(x):
     #Converts an input into two bytes to be sent to the Arduino
@@ -77,16 +82,8 @@ def getMotorCommandBytes(lPWM,rPWM):
     #send a command to motors. Commands can range from -255 to 255
     return motCmdBytes(lPWM)+motCmdBytes(rPWM)
     
-def update(dThetaL, dThetaR):
-    global tPrev
-    dt = time.time()-tPrev #In order to normalize the velocity with respect to time. 
-    #todo: convert dt to [seconds]
-    
-    lVel = dThetaL/dt
-    rVel = dThetaR/dt
-    #print lVel
-    lCommand = lVelTroller.update(lVel)
-    rCommand = rVelTroller.update(rVel)
-    
-    tPrev = time.time()
+def update(lVel, rVel):
+    bal = balanceTroller.update(rVel-lVel)
+    lCommand = lVelTroller.update(lVel)+bal
+    rCommand = rVelTroller.update(rVel)-bal
     return [lCommand, rCommand]
