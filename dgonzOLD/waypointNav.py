@@ -20,8 +20,8 @@ TRANSLATING = 2
 
 state = IDLE
 
-angTroller = PIDController(1,.0001,.001)
-transTroller = PIDController(-.1,-.0001,-0.001)
+angTroller = PIDController(2.850,.000875,.0075)
+transTroller = PIDController(-.1625,-.000225,-0.005)
 
 def initialize():
     print "waypoint Navigator initialized"
@@ -50,7 +50,7 @@ def compareAng(ang1,ang2):
         return False
 
 def compareDist(pose1,pose2):
-    eXY = .25
+    eXY = .1875
     if(dist(pose1[0],pose1[1],pose2[0],pose2[1])<eXY):
         return True
     else:
@@ -69,15 +69,15 @@ def update(myPose):
     global desiredPose
     global desiredAngle
     global state
-
-    desiredPose = wp[0]
+    
+    if(len(wp)!=0):
+        desiredPose = wp[0]
 
     pose = myPose
     desiredAngle = getAngle(pose[0],pose[1],desiredPose[0],desiredPose[1])
     #print angDiff(pose[2],desiredAngle)
 
     if(state == IDLE):
-        print "Sup"
         if(not comparePose(pose,desiredPose)):
             state = ROTATING
             print "WPState = ROTATE"
@@ -88,6 +88,7 @@ def update(myPose):
             state = TRANSLATING
             print "WPState = TRANSLATING"
             transTroller.setDesired(0,reset = True)
+            angTroller.setDesired(0,reset = True)
             return [0,0]
         else:
             return [0,angTroller.update(angDiff(pose[2],desiredAngle))]
@@ -95,7 +96,6 @@ def update(myPose):
         if(comparePose(pose,desiredPose)):
             if(len(wp)==0):
                 state= IDLE
-
                 print "WPState = IDLE"
                 return [0,0]
             else:
@@ -103,7 +103,7 @@ def update(myPose):
                 state = IDLE
                 return [0,0]
         else:
-            return [transTroller.update(dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),0]
+            return [transTroller.update(dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),angTroller.update(angDiff(pose[2],desiredAngle))]
 
 def addWaypoint(newWP):
     global wp

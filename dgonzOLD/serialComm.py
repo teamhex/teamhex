@@ -11,9 +11,9 @@ import struct
 def initialize(encPort = '/dev/arduino_encoders',motPort = '/dev/arduino_control', myBaud = 115200):
     global serEnc
     global serMot
-    serEnc = serial.Serial(myBaud)
+    serEnc = serial.Serial(baudrate=myBaud)
     serEnc.connect(port=encPort)
-    serMot = serial.Serial(myBaud)
+    serMot = serial.Serial(baudrate=myBaud)
     serMot.connect(port=motPort)
     print "connected!"
     

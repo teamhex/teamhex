@@ -12,6 +12,7 @@ import serialComm as ser
 import waypointNav
 import odo
 import math
+import time
 
 debug = True
 
@@ -77,8 +78,13 @@ def testVel():
 def testWaypoints():
     initialize()
     waypointNav.addWaypoints([[24,0,0],[24,24,math.pi/2.0],[0,24,math.pi],[0,0,0]])
+    t0 = time.time()
     while(True):
         update()
+        if(len(waypointNav.wp)==0):
+            print "Runtime: "+str(time.time()-t0)
+            cleanQuit('','')
+            #waypointNav.addWaypoints([[24,0,0],[24,24,math.pi/2.0],[0,24,math.pi],[0,0,0]])
 
 def cleanQuit(signal, frame):
     print "Interrupt received"
