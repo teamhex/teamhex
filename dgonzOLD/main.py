@@ -14,7 +14,7 @@ import odo
 import math
 import time
 
-debug = True
+debug = False
 
 pose = [0,0,0]
 
@@ -23,13 +23,30 @@ def initialize():
     waypointNav.initialize()
     ser.sendCommand(mot.getMotorCommandBytes(0,0))
 
+prevData = None,None
+def weird(data):
+    global prevData
+    epsilon = 25000
+    pe1,pe2 = prevData
+    e1,e2 = data
+    if pe1 is None or pe2 is None:
+        prevData = e1,e2
+        return False
+    elif abs(pe1-e1) > epsilon or abs(pe2-e2) > epsilon:
+        return True
+    else:
+        prevData = e1,e2
+        return False
+
 def update():
     global pose
 
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receive()
-    #print data
+    #if(weird(data)):
+    #    return
+    print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
 
@@ -41,6 +58,7 @@ def update():
 
     [forSet,angSet] = waypointNav.update(pose)
     mot.setAngForVels(forSet,angSet)
+    #print [forSet,angSet]
 
     #-------------------------Update Motor Controller
     [dThetaLdt, dThetaRdt] = odo.getVel()
@@ -77,7 +95,7 @@ def testVel():
 
 def testWaypoints():
     initialize()
-    waypointNav.addWaypoints([[24,0,0],[24,24,math.pi/2.0],[0,24,math.pi],[0,0,0]])
+    waypointNav.addWaypoints([[12,0,0],[24,0,0],[36,0,0],[36,12,math.pi/2.0],[36,24,math.pi/2.0],[36,36,math.pi/2.0],[24,36,math.pi],[12,36,math.pi],[0,36,math.pi],[0,24,0],[0,12,0],[0,0,0],[.5,0,0]])
     t0 = time.time()
     while(True):
         update()
