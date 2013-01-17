@@ -7,36 +7,21 @@ January 2013
 
 import signal
 import sys
+import time
 import motorControl as mot
 import serialComm as ser
 import waypointNav
 import odo
 import math
-import time
 
-debug = False
+debug =False
 
 pose = [0,0,0]
 
 def initialize():
     ser.initialize(encPort = '/dev/arduino_encoders',motPort = '/dev/arduino_control', myBaud = 1000000)
-    waypointNav.initialize()
+    #waypointNav.initialize()
     ser.sendCommand(mot.getMotorCommandBytes(0,0))
-
-prevData = None,None
-def weird(data):
-    global prevData
-    epsilon = 25000
-    pe1,pe2 = prevData
-    e1,e2 = data
-    if pe1 is None or pe2 is None:
-        prevData = e1,e2
-        return False
-    elif abs(pe1-e1) > epsilon or abs(pe2-e2) > epsilon:
-        return True
-    else:
-        prevData = e1,e2
-        return False
 
 def update():
     global pose
@@ -44,8 +29,6 @@ def update():
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receive()
-    #if(weird(data)):
-    #    return
     #print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
@@ -56,16 +39,8 @@ def update():
 
     #-------------------------Update Waypoint Navigator
 
-    [forSet,angSet] = waypointNav.update(pose)
-    if(forSet>3.5):
-        forSet = 3.5
-    if(angSet>3.5):
-        angSet = 3.5
-    elif(angSet<-3.5):
-        angSet = -3.5
-    mot.setAngForVels(forSet,angSet)
-    #print [forSet,angSet]
-    
+    #    [forSet,angSet] = waypointNav.update(pose)
+    #mot.setAngForVels(forSet,angSet)
 
     #-------------------------Update Motor Controller
     [dThetaLdt, dThetaRdt] = odo.getVel()
@@ -79,7 +54,8 @@ def testVel():
     i = 0
     mot.setForVel(0)
     mot.setAngVel(3)
-    while(True):
+    start = time.time()
+    while(time.time()-start < 160):
     #    i+=1
     #    if (i/500.0== 1):
     #        print "lol"
@@ -102,14 +78,9 @@ def testVel():
 
 def testWaypoints():
     initialize()
-    waypointNav.addWaypoints([[36,0,0],[36,36,0],[76,0,0],[-36,-36,0],[0,0,0],[3,0,0]])
-    t0 = time.time()
+    waypointNav.addWaypoints([[24,0,0],[24,24,math.pi/2.0],[0,24,math.pi],[0,0,0]])
     while(True):
         update()
-        if(len(waypointNav.wp)==0):
-            print "Runtime: "+str(time.time()-t0)
-            cleanQuit('','')
-            #waypointNav.addWaypoints([[24,0,0],[24,24,math.pi/2.0],[0,24,math.pi],[0,0,0]])
 
 def cleanQuit(signal, frame):
     print "Interrupt received"
@@ -120,4 +91,6 @@ def cleanQuit(signal, frame):
 
 signal.signal(signal.SIGINT, cleanQuit)
 
-testWaypoints()
+#testWaypoints()
+testVel()
+cleanQuit('blabla','')
