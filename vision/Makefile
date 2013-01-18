@@ -7,7 +7,7 @@ WARNINGS = -Wextra
 CFLAGS = -std=gnu99
 CPPFLAGS = $(WARNINGS) -O3 -fPIC
 
-target debug: CPPFLAGS = $(WARNINGS) -g
+target debug: CPPFLAGS = $(WARNINGS) -g -O3
 
 OBJECTS= colors.o capture.o pixel.o vision.o
 

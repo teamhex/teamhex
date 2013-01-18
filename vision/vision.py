@@ -2,15 +2,31 @@ import ctypes
 import time
 import os
 
-path = os.path.abspath(__file__)
+path = os.path.dirname(os.path.realpath(__file__))
 myCam = ctypes.CDLL(path+'/_vision.so')
-    
+
+class CPixelArea(ctypes.Structure):
+    _fields_ = [('pixel', (ctypes.c_int)),
+                ('centerL', (ctypes.c_int)),
+                ('centerC', (ctypes.c_int)),
+                ('size', (ctypes.c_int))]
+
 def init():
     global myCam
-    myCam.startCam("/dev/video1")
-    myCam.enableCam()
-    print "Calibrating Camera..."
-    time.sleep(1)
+    myCam.startCam("/dev/maslab_camera")
+    #myCam.enableCam()
+
+def setSnap(i):
+    myCam.setFilePicture("/home/rgomes/Dropbox/snapshots2/snap"+str(i))
+    myCam.getInfo()
+
+def nAreas():
+    return myCam.getNAreas()
+
+def getArea(i):
+    a = CPixelArea()
+    myCam.getArea(i, ctypes.byref(a))
+    return a
     
 def getBallPose():
     global myCam
@@ -19,8 +35,9 @@ def getBallPose():
 
 def test():
     init()
-    for i in xrange(100):
-        print getBallPose()
-    myCam.stopCam()
+    start = time.time()
+    for i in xrange(3175):
+        setSnap(i)
+    print time.time()-start
 
-test()
+

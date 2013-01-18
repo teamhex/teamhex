@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "general.h"
 #include "pixel.h"
@@ -8,16 +9,13 @@ extern "C" {
 #include "colors.h"
 }
 
-int nAreas;
-PixelArea *areas[WIDTH*HEIGHT/MIN_AREA_SIZE]
-int globalPicture[HEIGHT][WIDTH];
+int nAreas = 0;
+PixelArea *areas[WIDTH*HEIGHT];
+int picture[HEIGHT][WIDTH];
 bool visited[HEIGHT][WIDTH];
 Position *queue[WIDTH*HEIGHT];
 int front,back;
-int count = 0;
 PixelArea *area;
-
-PixelArea *largestArea;
 
 Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 int allnNeighbors[HEIGHT][WIDTH];
@@ -25,46 +23,59 @@ int allnNeighbors[HEIGHT][WIDTH];
 Position::Position(): l(0),c(0) {}
 Position::Position(int line, int column): l(line),c(column) {}
 
-HueMatcher::HueMatcher(int h, int t): hue(h), tolerance(t) {}
+HueMatcher::HueMatcher(int h, int t, int mSize, int mSat, int mLum):
+  hue(h), tolerance(t), minSize(mSize), minSat(mSat), maxLum(mLum) {}
+void HueMatcher::fill(HueMatcher **hueVector) {
+  for(int i = -tolerance; i <= tolerance; ++i) {
+    hueVector[(hue+i+360)%360] = this;
+  }
+}
 bool HueMatcher::operator ()(int current, int neighbor) {
-  return ANGLE_DIST(hue,neighbor>>16) < tolerance;
+  return
+    ANGLE_DIST(hue,neighbor>>16) < tolerance &&
+    ((neighbor>>8)&0xFF) > minSat &&
+    (neighbor&0xFF) < maxLum;
+}
+bool HueMatcher::operator ()(PixelArea *area) {
+  return
+    area != NULL &&
+    (*this)(area->startPixel, area->startPixel) &&
+    //area->size > minSize;
+    (area->bottomRight.l - area->topLeft.l)*(area->bottomRight.c-area->topLeft.c) > minSize;
 }
 
-// Checks if two HSL vectors are similar.
-// HSL vector: least significant 7 bits are light, next 7 are saturation, next are hue
-// Strategy: subtract and see if resulting vector's magnitude is withing threshold
-GroupHSLMatcher::GroupHSLMatcher(int t): tolerance(t) {}
-bool GroupHSLMatcher::operator ()(int current, int neighbor) {
-  int dh,ds,dl;
-  int v1 = current;
-  int v2 = neighbor;
-  dh = (v1>>16) - (v2>>16);
-  ds = ((v1>>8)&BIT8) - ((v2>>8)&BIT8);
-  dl = (v1&BIT8)-(v2&BIT8);
-
-  return (dh*dh+ds*ds+dl*dl) < tolerance;
+MultiHueMatcher::MultiHueMatcher(HueMatcher **matchers, int nMatchers) {
+  memset(match, 0, sizeof(HueMatcher **)*360);
+  for(int i = 0; i < nMatchers; ++i) {
+    matchers[i]->fill(match);
+  }
+}
+bool MultiHueMatcher::operator ()(int current, int neighbor) {
+  if(match[neighbor>>16] != NULL && match[current>>16] == match[neighbor>>16]) {
+    return (*match[neighbor>>16])(current, neighbor);
+  }
+  return false;
+}
+bool MultiHueMatcher::operator ()(PixelArea *area) {
+  if(area != NULL && match[(area->startPixel)>>16] != NULL) {
+    return (*match[(area->startPixel)>>16])(area);
+  }
+  return false;
 }
 
-LABMatcher::LABMatcher(int lC, int t): labColor(lC),tolerance(t) {}
-bool LABMatcher::operator ()(int current, int neighbor) {
-  return LabDiffSqr(neighbor, labColor) < tolerance*tolerance;
-}
+HueMatcher COLOR_GREEN = HueMatcher(125,35,100,20,80);
+HueMatcher COLOR_RED = HueMatcher(0,20,100,30,80);
+HueMatcher COLOR_YELLOW = HueMatcher(55,10,300,45,70);
+HueMatcher COLOR_PURPLE = HueMatcher(255,10,300,45,70);
+HueMatcher *lookerHues[] = {
+  &COLOR_GREEN,
+  &COLOR_RED,
+  &COLOR_YELLOW,
+  &COLOR_PURPLE
+};
 
-GroupLABMatcher::GroupLABMatcher(int t): tolerance(t) {}
-bool GroupLABMatcher::operator ()(int current, int neighbor) {
-  return LabDiffSqr(current, neighbor) < tolerance;
-}
-
-HueMatcher COLOR_GREEN = HueMatcher(140,20);
-HueMatcher COLOR_RED = HueMatcher(350,20);
-HueMatcher COLOR_PURPLE = HueMatcher(25,20);
-HueMatcher COLOR_YELLOW = HueMatcher(64,20);
-
-LABMatcher LAB_RED = LABMatcher(RGBtoLab(255<<16),30);
-LABMatcher LAB_GREEN = LABMatcher(RGBtoLab((255<<8)),30);
-
-GroupHSLMatcher HSL_GROUP = GroupHSLMatcher(30);
-GroupLABMatcher LAB_GROUP = GroupLABMatcher(5);
+HueMatcher BLUE_WALLS = HueMatcher(217,10,400,30,60);
+MultiHueMatcher LOOKER = MultiHueMatcher(lookerHues,4);
 
 void setNeighbors(Position &p) {
   allnNeighbors[p.l][p.c] = 0;
@@ -88,8 +99,9 @@ void setNeighbors(Position &p) {
   }
 }
 
-void setArea(Position *start, Matcher &matches, int *picture) {
-  if(visited[start->l][start->l] || !matches(start, start)) {
+void setArea(Position *start, Matcher &matches) {
+  if(visited[start->l][start->c] || !matches(picture[start->l][start->c], picture[start->l][start->c])) {
+    delete start;
     area = NULL;
     return;
   }
@@ -99,10 +111,15 @@ void setArea(Position *start, Matcher &matches, int *picture) {
   int curHSL;
 
   area = new PixelArea();
-  area->start = start;
+  area->startPosition = start;
+  area->startPixel = picture[start->l][start->c];
   area->size = 0;
   area->center.l = 0;
   area->center.c = 0;
+  area->topLeft.l = start->l;
+  area->topLeft.c = start->c;
+  area->bottomRight.l = start->l;
+  area->bottomRight.c = start->c;
   
   front = back = 0;
   queue[back++] = start;
@@ -117,14 +134,27 @@ void setArea(Position *start, Matcher &matches, int *picture) {
 
     nNeighbors = allnNeighbors[current->l][current->c];
     neighbors = allNeighbors[current->l][current->c];
-    
+
     for(int i = 0; i < nNeighbors; ++i) {
       neigh = neighbors[i];
       
       if(matches(picture[current->l][current->c], picture[neigh->l][neigh->c]) && !visited[neigh->l][neigh->c]) {
+	// Bounding square
+	if(neigh->l < area->bottomRight.l) {
+	  area->bottomRight.l = neigh->l;
+	}
+	else if(neigh->l > area->topLeft.l) {
+	  area->topLeft.l = neigh->l;
+	}
+	if(neigh->c < area->bottomRight.c) {
+	  area->bottomRight.c = neigh->c;
+	}
+	else if(neigh->c > area->topLeft.c) {
+	  area->topLeft.c = neigh->c;
+	}
+
 	queue[back++] = neigh;
 	visited[neigh->l][neigh->c] = true;
-	++count;
       }
     }
   }
@@ -145,45 +175,42 @@ void startNeighbors() {
 void startHSL(int *rgb) {
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
-      globalPicture[l][c] = RGBtoHSL(rgb[l*WIDTH+c]);
+      picture[l][c] = RGBtoHSL(rgb[l*WIDTH+c]);
     }
   }
 }
 
-void startLAB(int *rgb) {
-  for(int l = 0; l < HEIGHT; ++l) {
-    for(int c = 0; c < WIDTH; ++c) {
-      globalPicture[l][c] = RGBtoLab(rgb[l*WIDTH+c]);
-    }
-  }
-}
-
-void findObjectsInImage(Matcher &matches) {
-  int maxSize = -1;
-  largestArea = NULL;
+void findObjectsInImage(Matcher &matches, Matcher &stopMatch) {
   memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
+  area = NULL;
+  // Clear previous areas
+  for(int i = 0; i < nAreas; ++i) {
+    delete areas[i]->startPosition;
+    delete areas[i];
+  }
+  memset(areas, 0, sizeof(PixelArea *)*HEIGHT*WIDTH);
+  nAreas = 0;
 
-  for(int l = 0; l < HEIGHT; ++l) {
+  for(int l = HEIGHT-1; l >= 0; --l) {
     for(int c = 0; c < WIDTH; ++c) {
-      setArea(new Position(l,c), matches, globalPicture);
+      setArea(new Position(l,c), matches);
+      if(matches(area)) {
+	areas[nAreas++] = area;
+      }
+      else if(area != NULL) {
+	delete area->startPosition;
+	delete area;
+      }
+      setArea(new Position(l,c), stopMatch);
+      if(stopMatch(area)) {
+	delete area->startPosition;
+	delete area;
+	return;
+      }
       if(area != NULL) {
-	if(area->size > maxSize) {
-	  if(maxSize != -1) {
-	    delete largestArea->start;
-	    delete largestArea;
-	  }
-	  maxSize = area->size;
-	  largestArea = area;
-	}
-	else {
-	  delete area->start;
-	  delete area;
-	}
+	delete area->startPosition;
+	delete area;
       }
     }
   }
-}
-
-PixelArea *getLargestArea() {
-  return largestArea;
 }
