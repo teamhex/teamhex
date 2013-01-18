@@ -1,4 +1,5 @@
 #include "bayesianGrid.h"
+#include "motionPlanner.h"
 #include <string.h>
 
 bool configMap[HEIGHT][WIDTH];

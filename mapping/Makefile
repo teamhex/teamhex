@@ -9,7 +9,7 @@ CPPFLAGS = $(WARNINGS) -O3 -fPIC
 
 target debug: CPPFLAGS = $(WARNINGS) -g -O3
 
-OBJECTS= bayesianGrid.o mapping.o
+OBJECTS= bayesianGrid.o mapping.o motionPlanner.o
 
 all:	app
 

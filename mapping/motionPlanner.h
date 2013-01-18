@@ -1,6 +1,8 @@
 #ifndef MOTION_PLANNER_H
 #define MOTION_PLANNER_H
 
+#include "bayesianGrid.h"
+
 extern Position *plan[HEIGHT*WIDTH];
 extern int planLength;
 
