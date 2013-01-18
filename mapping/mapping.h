@@ -15,8 +15,8 @@ extern "C" {
 
   void setConfigSpace();
   void makePlan(double goalX, double goalY);
-  int getPlanLength();
-  void getPlanWP(int wpI, CPosition *WP);
+  //int getPlanLength();
+  //void getPlanWP(int wpI, CPosition *WP);
 
   void printCells();
 }
