@@ -13,6 +13,7 @@ import waypointNav
 import odo
 import math
 import time
+import sensor
 
 debug = False
 
@@ -43,14 +44,18 @@ def update():
 
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
-    data = ser.receive()
+    data = ser.receiveData()
+    print data
     #if(weird(data)):
     #    return
-    #print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
-
-    #    if((pose != odo.pose) and debug):
+    
+    #-------------------------Update Sensor Values
+    
+    sensorPoints = sensor.update(data[2:7],pose)
+    
+    #-------------------------Debug Print
     if debug:
         print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
 

@@ -50,8 +50,9 @@ class Serial:
         buf = ''
         size = 0
         # Send a request
-        while self.connection.read() != 'S':
-            pass
+        c = self.connection.read()
+        while c != 'S':
+            c = self.connection.read()
         self.connection.timeout = 0.01
         buf = self.connection.read()
         if(buf != ''):
