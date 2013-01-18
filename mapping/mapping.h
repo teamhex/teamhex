@@ -1,10 +1,22 @@
 extern "C" {
-  // Always call robotPositioned first! Otherwise most other functions will use the wrong robot position.
-  void robotPositioned(int robotX, int robotY);
-  void wallDetected(int wallX, int wallY);
-  void wallNotDetected(int sensorLimitX, int sensorLimitY);
-  void ballDetected(int ballX, int ballY, int ballColor);
-  void specialWall(int wallX, int wallY, int wallType);
-
+  struct CPosition {
+    double x;
+    double y;
+  };
   
+  // Always call robotPositioned first! Otherwise most other functions will use the wrong robot position.
+  void initMapping();
+  void robotPositioned(double robotX, double robotY);
+  void wallDetected(double wallX, double wallY);
+  void wallNotDetected(double sensorLimitX, double sensorLimitY);
+  void ballDetected(double ballX, double ballY, int ballColor);
+  void specialWall(double wallX, double wallY, int wallType);
+  void closestBall(CPosition *res);
+
+  void setConfigSpace();
+  void makePlan(double goalX, double goalY);
+  int getPlanLength();
+  void getPlanWP(int wpI, CPosition *WP);
+
+  void printCells();
 }

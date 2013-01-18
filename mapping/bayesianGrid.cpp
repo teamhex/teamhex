@@ -1,6 +1,6 @@
 #include "bayesianGrid.h"
-#include <stdio.h>
 #include <string.h>
+#include <stdio.h>
 
 Cell theMap[HEIGHT][WIDTH];
 Position *queue[HEIGHT*WIDTH];
@@ -155,12 +155,15 @@ void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &r
     l = gridPos.l;
     c = gridPos.c;
     if(isValid(gridPos)) {
+      if(detect) {
+	theMap[l][c].pBall = bayesianUpdate(theMap[l][c].pBall, P_DETECT_GIVEN_BALL, P_DETECT_GIVEN_NBALL, false);
+      }
       theMap[l][c].pWall = bayesianUpdate(theMap[l][c].pWall, P_DETECT_GIVEN_WALL, P_DETECT_GIVEN_NWALL, detect);
     }
   }
 }
 
-bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos, RealPosition &robotPos) {
+bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos) {
   double minDist,d;
   Position gridOri = realToGrid(orientation);
   Position robotGridPos = realToGrid(robotPos);
@@ -206,7 +209,7 @@ Position *findClosestBall(RealPosition &robotPos) {
   Position start = realToGrid(robotPos);
 
   memset(visited, false, HEIGHT*WIDTH*sizeof(bool));
-  visited[start->l][start->c] = true;
+  visited[start.l][start.c] = true;
 
   queueFront = queueBack = 0;
   queue[queueBack++] = &start;
@@ -219,10 +222,11 @@ Position *findClosestBall(RealPosition &robotPos) {
 
     for(int i = 0; i < nNeighbors; ++i) {
       if(!visited[neighbors[i]->l][neighbors[i]->c]) {
-	if(isBall(*neighbors[i])) {
+	if(isBall(theMap[neighbors[i]->l][neighbors[i]->c])) {
 	  return neighbors[i];
 	}
-	if(distanceSqr(start, *neighbors[i] <= FIELD_DIAMTER*FIELD_DIAMETER)) {
+	if(distanceSqr(start, *neighbors[i]) <= FIELD_DIAMETER*FIELD_DIAMETER) {
+	  visited[neighbors[i]->l][neighbors[i]->c] = true;
 	  queue[queueBack++] = neighbors[i];
 	}
       }
@@ -269,35 +273,3 @@ void printMap() {
   printf("\n");
 }
 
-int main() {
-  char command;
-  RealPosition robotPos, hitPos;
-  initialize();
-  for(;;) {
-    printMap();
-    scanf("%c %lf %lf %lf %lf", &command, &robotPos.x, &robotPos.y, &hitPos.x, &hitPos.y);
-    while(command == '\n') {
-      scanf("%c %lf %lf %lf %lf", &command, &robotPos.x, &robotPos.y, &hitPos.x, &hitPos.y);
-    }
-    if(command == 'n') {
-      continue;
-    }
-    switch(command) {
-    case 'q':
-      return 0;
-    case 'w':
-      sensorUpdate(NORMAL_WALL, true, hitPos, robotPos);
-      break;
-    case 'r':
-      sensorUpdate(RED_BALL, true, hitPos, robotPos);
-      break;
-    case 'g':
-      sensorUpdate(GREEN_BALL, true, hitPos, robotPos);
-      break;
-    case 't':
-      sensorUpdate(ROBOT_BODY, false, robotPos, robotPos);
-    default:
-      break;
-    }
-  }
-}

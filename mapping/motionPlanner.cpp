@@ -1,4 +1,5 @@
 #include "bayesianGrid.h"
+#include <string.h>
 
 bool configMap[HEIGHT][WIDTH];
 Position *plan[HEIGHT*WIDTH];
@@ -38,11 +39,11 @@ void wallExpand(int l, int c, int radius) {
   }
 }
 
-void setConfigurationSpace(struct Cell *bayesianMap) {
+void setConfigurationSpace() {
   memset(configMap, false, sizeof(bool)*HEIGHT*WIDTH);
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
-      if(isWall(bayesianMap[l][c])) {
+      if(isWall(theMap[l][c])) {
 	wallExpand(l,c,ROBOT_RADIUS);
       }
     }
@@ -54,14 +55,16 @@ bool makePlan(Position &start, Position &goal) {
   int nNeighbors;
   Position *cur;
 
-  double minDist;
+  double minDist,d;
+
+  planLength = 0;
   
   // Start or goal blocked
   if(configMap[start.l][start.c] || configMap[goal.l][goal.c]) {
     return false;
   }
   memset(visited, false, HEIGHT*WIDTH*sizeof(bool));
-  Position *cur = new Position();
+  cur = new Position();
   cur->l = start.l;
   cur->c = start.c;
 
@@ -80,7 +83,7 @@ bool makePlan(Position &start, Position &goal) {
     cur = NULL;
 
     for(int i = 0; i < nNeighbors; ++i) {
-      d = distanceSqr(goal, *neihbors[i]);
+      d = distanceSqr(goal, *neighbors[i]);
       if(!visited[neighbors[i]->l][neighbors[i]->c] && (minDist == -1 || d < minDist)) {
         d = minDist;
 	cur = neighbors[i];
@@ -88,6 +91,7 @@ bool makePlan(Position &start, Position &goal) {
     }
   }
   delete cur;
+  planLength = 0;
   return false;
 }
 
@@ -95,7 +99,7 @@ bool isLineClear(Position &start, Position &end) {
   Position **neighbors;
   int nNeighbors;
   Position *cur = &start;
-  double minDist = distanceSqr(start, end);
+  double minDist = distanceSqr(start, end),d;
 
   do {
     if(configMap[cur->l][cur->c]) {

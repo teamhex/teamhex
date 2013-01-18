@@ -26,10 +26,10 @@
 #define isBall(C) ((C).pBall > BALL_THRESHOLD)
 #define isValid(P) (((P).l >= 0 && (P).l < HEIGHT) && ((P).c >= 0 && (P).c < WIDTH))
 
-#define WIDTH 20
-#define HEIGHT 20
-#define REAL_WIDTH 50
-#define REAL_HEIGHT 50
+#define WIDTH 100
+#define HEIGHT 100
+#define REAL_WIDTH 100.0
+#define REAL_HEIGHT 100.0
 #define CELL_WIDTH ((double)REAL_WIDTH/(double)WIDTH)
 #define CELL_HEIGHT ((double)REAL_HEIGHT/(double)HEIGHT)
 
@@ -80,10 +80,14 @@ Position *findClosestBall(RealPosition &robotPos);
 
 void initialize();
 
+void printMap();
+
 extern Position *queue[HEIGHT*WIDTH];
 extern int queueFront, queueBack;
 extern bool visited[HEIGHT][WIDTH];
 extern Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 extern int allnNeighbors[HEIGHT][WIDTH];
+
+extern Cell theMap[HEIGHT][WIDTH];
 
 #endif

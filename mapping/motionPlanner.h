@@ -5,7 +5,7 @@ extern Position *plan[HEIGHT*WIDTH];
 extern int planLength;
 
 void wallExpand(int l, int c, int radius);
-void setConfigurationSpace(struct Cell *bayesianMap);
+void setConfigurationSpace();
 bool makePlan(Position &start, Position &goal);
 bool isLineClear(Position &start, Position &end);
 void smoothPlan();
