@@ -1,5 +1,0 @@
-void wallExpand(int l, int c, int radius);
-void setConfigurationSpace(struct Cell *bayesianMap);
-bool makePlan(Position &start, Position &goal);
-bool isLineClear(Position &start, Position &end);
-void smoothPlan();
