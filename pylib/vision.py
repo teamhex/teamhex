@@ -1,4 +1,9 @@
+import ctypes
 import math
+import os
+
+path = os.path.dirname(os.path.realpath(__file__))
+myCam = ctypes.CDLL(path+"/../vision/_vision.so")
 
 WIDTH = 320
 HEIGHT = 240
@@ -9,7 +14,8 @@ sinCamAngle = math.sin(camAngle)
 cosCamAngle = math.cos(camAngle)
 camHeight = 5 # might change
 ballHeight = 2.5 # fixed by the contest rules
-focalLength = 8 # calibrate please
+focalLengthX = 277 # calibrate please (maybe correct?)
+focalLengthY = 120
 
 # dX and dY are the displacement of the center of the blob, relative to the image's center.
 # Based on that and the height and width of the picture,
@@ -24,9 +30,9 @@ focalLength = 8 # calibrate please
 #   camHeight is relative to the field;
 #   dX and dY describe the position of the center of the ball seen on screen.
 # Note on pose: y is pointing in the same direction as the robot, x is perpendicular and pointing to the left.
-def getRelBallPose(dX,dY):
-    global sinCamAngle,cosCamAngle,camHeight,ballHeight,focalLength
+def getRelativeBallPose(dX,dY):
+    global sinCamAngle,cosCamAngle,camHeight,ballHeight,focalLengthX,focalLengthY
     a = (2.0*cam - ball)/2.0
-    y = a*(sinCamAngle*dY + cosCamAngle*focalLength)/(sinCamAngle*focalLength - cosCamAngle*dY)
-    x = focalLength/(dY * math.sqrt(x**2 + cam**2))
+    y = a*(sinCamAngle*dY + cosCamAngle*focalLengthX)/(sinCamAngle*focalLengthX - cosCamAngle*dY)
+    x = focalLengthY/(dY * math.sqrt(x**2 + cam**2))
     return (x,y)

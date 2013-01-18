@@ -2,7 +2,16 @@ extern "C" {
   void startCam(const char *device);
   void enableCam();
   void stopCam();
+  void setFilePicture(char *filename);
+  void setPicture();
   void getInfo();
-  int getX();
-  int getSize();
+  
+  struct CPixelArea {
+    int pixel;
+    int centerL,centerC;
+    int size;
+  };
+
+  int getNAreas();
+  void getArea(int i, struct CPixelArea *res);
 }

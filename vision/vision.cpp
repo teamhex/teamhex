@@ -19,7 +19,6 @@ struct cam c;
 int rgbPicture[WIDTH*HEIGHT];
 int rgbPictureTemp[WIDTH*HEIGHT];
 int rgbPictureMeh[WIDTH*HEIGHT];
-PixelArea *interestArea;
 
 pthread_t captureThread;
 pthread_mutex_t pictureLock = PTHREAD_MUTEX_INITIALIZER;
@@ -63,27 +62,28 @@ void stopCam() {
   closeCam(&c);
 }
 
-// Matcher that is givena a matcher and draws on the matching cells.
-class DrawMatcher: public Matcher {
-private:
-  Matcher *matches;
-public:
-  DrawMatcher(Matcher *m): matches(m) {}
-  bool operator ()(Position *current, Position *neighbor) {
-    if((*matches)(current, neighbor)) {
-      rgbPictureMeh[neighbor->l*WIDTH+neighbor->c] = 0;
-      return true;
-    }
-    else {
-      return false;
+void setFilePicture(char *filename) {
+  char s[255];
+  int r,g,b;
+  FILE *fp = NULL;
+  while(fp == NULL) {
+    fp = fopen(filename, "r");
+  }
+  fgets(s, 255, fp);
+  fgets(s, 255, fp);
+  fgets(s, 255, fp);
+  for(int l = 0; l < HEIGHT; ++l) {
+    for(int c = 0; c < WIDTH; ++c) {
+      r = fgetc(fp);
+      g = fgetc(fp);
+      b = fgetc(fp);
+      rgbPictureMeh[l*WIDTH+c] = (r<<16) | (g<<8) | b;
     }
   }
-};
+  fclose(fp);
+}
 
-DrawMatcher m = DrawMatcher(&MATCHER);
-
-void getInfo() {
-  //capture(&c,rgbPicture);
+void setPicture() {
   // Wait for new picture!
   newPicture = true;
   if(!newPicture) {
@@ -92,68 +92,33 @@ void getInfo() {
     newPicture = false;
     pthread_mutex_unlock(&newPictureLock);
   }
-  
   pthread_mutex_lock(&pictureLock);
-  //memcpy(rgbPictureMeh, rgbPicture, sizeof(int)*WIDTH*HEIGHT);
+  memcpy(rgbPictureMeh, rgbPicture, sizeof(int)*WIDTH*HEIGHT);
   pthread_mutex_unlock(&pictureLock);
+}
 
-  memset(rgbPictureMeh, 0, sizeof(int)*WIDTH*HEIGHT);
-  
-  blur(rgbPictureMeh);
+void getInfo() {
+  //blur(rgbPictureMeh);
   startHSL(rgbPictureMeh);
-  m = DrawMatcher(&COLOR_GREEN);
-  findObjectsInImage(COLOR_GREEN);
-  interestArea = getLargestArea();
-  if(interestArea != NULL) {
-    memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
-    setArea(interestArea->start, m);
-  }
-  m = DrawMatcher(&COLOR_RED);
-  findObjectsInImage(COLOR_RED);
-  interestArea = getLargestArea();
-  if(interestArea != NULL) {
-    memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
-    setArea(interestArea->start, m);
-  }
-  m = DrawMatcher(&COLOR_YELLOW);
-  findObjectsInImage(COLOR_YELLOW);
-  interestArea = getLargestArea();
-  if(interestArea != NULL) {
-    memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
-    setArea(interestArea->start, m);
-  }
-  saveRGB(rgbPictureMeh, "tmp/snap");
-  //int col = 255;
-  //int color = col;
-  /* for(vector<PixelArea*>::iterator i = g.areas.begin(); i != g.areas.end(); ++i) { */
-  /*   (*i)->color(rgbPicture,color); */
-  /*   color <<= 8; */
-  /*   if(color > (255<<16)+(255<<8)+255) { */
-  /* 	col /= 2; */
-  /* 	color = col; */
-  /*   } */
-  /* } */
-  //saveRGB(rgbPicture, "snap");
-  //printf("%d\n", g.areas.size());
+  findObjectsInImage(LOOKER,BLUE_WALLS);
+  //saveRGB(rgbPictureMeh, "tmp/snap");
 }
 
-int getX() {
-  if(interestArea == NULL) {
-    return 0;
-  }
-  return interestArea->center.c;
+int getNAreas() {
+  return nAreas;
 }
 
-int getSize() {
-  if(interestArea == NULL) {
-    return 0;
+void getArea(int i, struct CPixelArea *res) {
+  if(i >= 0 && i < nAreas) {
+    res->pixel = areas[i]->startPixel;
+    res->centerL = areas[i]->center.l;
+    res->centerC = areas[i]->center.c;
+    res->size = areas[i]->size;
   }
-  return interestArea->size;
-}
-
-int getHue() {
-  if(interestArea == NULL) {
-    return 0;
+  else {
+    res->pixel = -1;
+    res->centerL = -1;
+    res->centerC = -1;
+    res->size = -1;
   }
-  return interestArea->hue;
 }
