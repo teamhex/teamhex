@@ -14,6 +14,7 @@ import odo
 import math
 import time
 import sensor
+import random
 
 debug = False
 
@@ -52,6 +53,10 @@ def update():
     pose = odo.update(data[0],data[1])
     
     #-------------------------Update Sensor Values
+    if(wayPointNav.state == TRANSLATING):
+        for i in data[2:7]:
+            if(i > 250):
+                wayPointNav.wp = []
     
     sensorPoints = sensor.update(data[2:7],pose)
     
@@ -82,8 +87,6 @@ def update():
 def testVel():
     initialize()
     i = 0
-    mot.setForVel(0)
-    mot.setAngVel(3)
     while(True):
     #    i+=1
     #    if (i/500.0== 1):
@@ -125,4 +128,14 @@ def cleanQuit(signal, frame):
 
 signal.signal(signal.SIGINT, cleanQuit)
 
-testWaypoints()
+def goMock():
+    initialize()
+    while True:
+        if(len(wayPointNav.wp)):
+            x = random.randrange(-240,240)
+            y = random.randrange(-240,240)
+            wayPointNav.addWaypoints([[x,y,0]])
+        update()
+        
+
+goMock()
