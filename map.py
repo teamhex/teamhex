@@ -10,7 +10,7 @@ import dgonzOLD.sensor as sensor
 import ctypes
 
 path = os.path.dirname(os.path.realpath(__file__))
-myMap = ctypes.CDLL(path+'/_mapping.so')
+myMap = ctypes.CDLL(path+'/mapping/_mapping.so')
 
 class CPosition(ctypes.Structure):
     _fields_ = [('x', (ctypes.c_double)),
