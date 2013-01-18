@@ -14,9 +14,9 @@ extern "C" {
   void closestBall(CPosition *res);
 
   void setConfigSpace();
-  void makePlan(double goalX, double goalY);
-  //int getPlanLength();
-  //void getPlanWP(int wpI, CPosition *WP);
+  void goPlan(double goalX, double goalY);
+  int getPlanLength();
+  void getPlanWP(int wpI, CPosition *WP);
 
   void printCells();
 }

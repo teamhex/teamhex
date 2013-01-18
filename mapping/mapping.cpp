@@ -60,7 +60,7 @@ void setConfigSpace() {
   setConfigurationSpace();
 }
 
-void makePlan(int goalX, int goalY) {
+void goPlan(int goalX, int goalY) {
   RealPosition goal;
   goal.x = goalX;
   goal.y = goalY;
@@ -69,17 +69,17 @@ void makePlan(int goalX, int goalY) {
   makePlan(startPos, goalPos);
 }
 
-/*int getPlanLength() {
+int getPlanLength() {
   return planLength;
-  }*/
+}
 
-/*void getPlanWP(int wpI, CPosition *WP) {
+void getPlanWP(int wpI, CPosition *WP) {
   if(wpI < planLength) {
     RealPosition pos = gridToReal(*plan[wpI]);
     WP->x = pos.x;
     WP->y = pos.y;
   }
-  }*/
+}
 
 void printCells() {
   printMap();
