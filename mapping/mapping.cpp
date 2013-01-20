@@ -85,6 +85,13 @@ void printCells() {
   printMap();
 }
 
+int getWall(int x, int y) {
+  RealPosition realPos = {x,y};
+  Position gridPos = realToGrid(realPos);
+  return (int)configMap[gridPos.l][gridPos.c];
+  //return (int)isWall(theMap[gridPos.l][gridPos.c]);
+}
+
 // int main() {
 //   char command;
 //   RealPosition robotPos, hitPos;

@@ -26,15 +26,15 @@
 #define isBall(C) ((C).pBall > BALL_THRESHOLD)
 #define isValid(P) (((P).l >= 0 && (P).l < HEIGHT) && ((P).c >= 0 && (P).c < WIDTH))
 
-#define WIDTH 50
-#define HEIGHT 50
+#define WIDTH 150
+#define HEIGHT 150
 #define REAL_WIDTH 150.0
 #define REAL_HEIGHT 150.0
 #define CELL_WIDTH ((double)REAL_WIDTH/(double)WIDTH)
 #define CELL_HEIGHT ((double)REAL_HEIGHT/(double)HEIGHT)
 
 #define BALL_RADIUS 1.25
-#define ROBOT_RADIUS 7
+#define ROBOT_RADIUS 7.0
 #define FIELD_DIAMETER 60
 
 #define NNEIGHBORS 8

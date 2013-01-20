@@ -19,4 +19,6 @@ extern "C" {
   void getPlanWP(int wpI, CPosition *WP);
 
   void printCells();
+
+  int getWall(int x, int y);
 }

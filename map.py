@@ -22,7 +22,7 @@ pose = [0,0,0]
 
 def initialize():
     ser.initialize(encPort = '/dev/arduino_encoders',motPort = '/dev/arduino_control', myBaud = 1000000)
-    ser.sendCommand(mot.getMotorCommandBytes(0,0))
+    #ser.sendCommand(mot.getMotorCommandBytes(0,0))
 
 def update():
     global pose,sensorPoints
@@ -60,9 +60,9 @@ def test():
 def cleanQuit(signal, frame):
     global myMap
     print "Interrupt received"
-    ser.sendCommand(mot.getMotorCommandBytes(0,0))
+    #ser.sendCommand(mot.getMotorCommandBytes(0,0))
     ser.serEnc.stop()
-    ser.serMot.stop()
+    #ser.serMot.stop()
     myMap.printCells()
     sys.exit(0)
 

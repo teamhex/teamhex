@@ -3,6 +3,7 @@
 
 #include "bayesianGrid.h"
 
+extern bool configMap[HEIGHT][WIDTH];
 extern Position *plan[HEIGHT*WIDTH];
 extern int planLength;
 
