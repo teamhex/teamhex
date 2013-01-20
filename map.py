@@ -25,7 +25,7 @@ def initialize():
     ser.sendCommand(mot.getMotorCommandBytes(0,0))
 
 def update():
-    global pose
+    global pose,sensorPoints
 
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
@@ -41,22 +41,29 @@ def update():
         print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
 
 def test():
+    global myMap
     myMap.initMapping()
+    initialize()
+    j = 0
     while True:
         update()
-        robotPositioned(pose[0], pose[1])
+        myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
         for i in sensorPoints:
             if(i[2]):
-                wallDetected(i[0], i[1])
+                myMap.wallDetected(ctypes.c_double(i[0]), ctypes.c_double(i[1]))
             else:
-                wallNotDetected(i[0], i[1])
-        myMap.printCells()
+                myMap.wallNotDetected(ctypes.c_double(i[0]), ctypes.c_double(i[1]))
+        if j == 0:
+            print pose,sensorPoints
+        j = (j+1)%1000
 
 def cleanQuit(signal, frame):
+    global myMap
     print "Interrupt received"
     ser.sendCommand(mot.getMotorCommandBytes(0,0))
     ser.serEnc.stop()
     ser.serMot.stop()
+    myMap.printCells()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)

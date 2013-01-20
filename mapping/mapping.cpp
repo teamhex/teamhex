@@ -9,34 +9,34 @@ void initMapping() {
   initialize();
 }
 
-void robotPositioned(int robotX, int robotY) {
+void robotPositioned(double robotX, double robotY) {
   robotPosition.x = robotX;
   robotPosition.y = robotY;
   sensorUpdate(ROBOT_BODY, false, robotPosition, robotPosition);
 }
 
-void wallDetected(int wallX, int wallY) {
+void wallDetected(double wallX, double wallY) {
   RealPosition wallPos;
   wallPos.x = wallX;
   wallPos.y = wallY;
   sensorUpdate(NORMAL_WALL, true, wallPos, robotPosition);
 }
 
-void wallNotDetected(int sensorLimitX, int sensorLimitY) {
+void wallNotDetected(double sensorLimitX, double sensorLimitY) {
   RealPosition wallPos;
   wallPos.x = sensorLimitX;
   wallPos.y = sensorLimitY;
   sensorUpdate(NORMAL_WALL, false, wallPos, robotPosition);
 }
 
-void ballDetected(int ballX, int ballY, int ballColor) {
+void ballDetected(double ballX, double ballY, int ballColor) {
   RealPosition ballPos;
   ballPos.x = ballX;
   ballPos.y = ballY;
   sensorUpdate(ballColor, true, ballPos, robotPosition);
 }
 
-void specialWall(int wallX, int wallY, int wallType) {
+void specialWall(double wallX, double wallY, int wallType) {
   RealPosition wallPos;
   wallPos.x = wallX;
   wallPos.y = wallY;
@@ -60,7 +60,7 @@ void setConfigSpace() {
   setConfigurationSpace();
 }
 
-void goPlan(int goalX, int goalY) {
+void goPlan(double goalX, double goalY) {
   RealPosition goal;
   goal.x = goalX;
   goal.y = goalY;

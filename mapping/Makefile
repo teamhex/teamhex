@@ -1,7 +1,7 @@
 CC=gcc
 CPP=g++
-APP_BINARY=vision
-APP_LIB=vision.so
+APP_BINARY=mapping
+APP_LIB=_mapping.so
 WARNINGS = -Wextra
 
 CFLAGS = -std=gnu99
