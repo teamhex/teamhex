@@ -16,8 +16,8 @@ dThetaL = 0
 dThetaR = 0
 dThetaLdt = 0
 dThetaRdt = 0
-x = 0
-y = 0
+x = 75
+y = 75
 theta = 0
 pose = [x,y,theta]
 
