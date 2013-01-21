@@ -30,10 +30,10 @@ Encoder white to 20
 -Serial Communication with master. Baudrate: 1000000 (One Million)
 -interrupt-driven quadrature decoding for two drive motors.
 -Drive motors with PWM out
+-Read Analog and Digital sensor feedback and send to master
 
 --ToDo: 
 -Drive Servos with PWM out.
--Read Analog and Digital sensor feedback and send to master
 */
 
 #include "Arduino.h"
@@ -45,23 +45,21 @@ Encoder white to 20
 // I use them in the interrupt routines while the motor runs at full speed.
 
 // Serial
-#define TIMEOUT 1000
+#define TIMEOUT 1000l
 int inBytes = 0;
 char buf[256];
 
 // Quadrature encoders
 // Left encoder
 #define LeftEncoderIntA 0
-#define LeftEncoderIntB 1
 #define LeftEncoderPinA 2
-#define LeftEncoderPinB 3
+#define LeftEncoderPinB 4
 #define LeftEncoderIsReversed
 
 // Right encoder
-#define RightEncoderIntA 2
-#define RightEncoderIntB 3
-#define RightEncoderPinA 21
-#define RightEncoderPinB 20
+#define RightEncoderIntA 1
+#define RightEncoderPinA 3
+#define RightEncoderPinB 5
 #define RightEncoderIsReversed
 
 //Motor Outputs
@@ -70,6 +68,17 @@ char buf[256];
 #define LMotorDirPin 22
 #define RMotorDirPin 23
 
+// Distance sensors
+#define NSENSORS 5
+#define SENSOR_0 0
+#define SENSOR_1 1
+#define SENSOR_2 2
+#define SENSOR_3 3
+#define SENSOR_4 4
+
+int sensors[NSENSORS];
+char sensorsToSend[NSENSORS*2];
+
 int rIn = 0;
 int lIn = 0;
 int commandL;
@@ -77,6 +86,8 @@ int commandR;
 
 volatile long leftEncoderTicks = 0;
 volatile long rightEncoderTicks = 0;
+
+char eV[8];
 
 unsigned char inByte = '0';
 
@@ -103,33 +114,44 @@ void setup(){
   digitalWrite(LeftEncoderPinA, LOW);  // turn on pullup resistors
   pinMode(LeftEncoderPinB, INPUT);      // sets pin B as input
   digitalWrite(LeftEncoderPinB, LOW);  // turn on pullup resistors
-  attachInterrupt(LeftEncoderIntA, HandleLeftMotorInterruptA, CHANGE);
-  attachInterrupt(LeftEncoderIntB, HandleLeftMotorInterruptB, CHANGE);
+  attachInterrupt(LeftEncoderIntA, HandleLeftMotorInterrupt, CHANGE);
   // Right encoder
   pinMode(RightEncoderPinA, INPUT);      // sets pin A as input
   digitalWrite(RightEncoderPinA, LOW);  // turn on pullup resistors
   pinMode(RightEncoderPinB, INPUT);      // sets pin B as input
   digitalWrite(RightEncoderPinB, LOW);  // turn on pullup resistors
-  attachInterrupt(RightEncoderIntA, HandleRightMotorInterruptA, CHANGE);
-  attachInterrupt(RightEncoderIntB, HandleRightMotorInterruptB, CHANGE);
-  
+  attachInterrupt(RightEncoderIntA, HandleRightMotorInterrupt, CHANGE);  
 }
 
 void loop(){
+  // Get information from sensors
+  for(int i = 0; i < NSENSORS; ++i) {
+    sensors[i] = analogRead(i);
+    sensorsToSend[i*2] = (char)(sensors[i]>>8);
+    sensorsToSend[i*2+1] = (char)(sensors[i]&0xFF);
+  }
+  // Get information from encoders
   writeEncoderVals();
-  //getMotorCommands();
-  //serReceive();
-  //serSend(buf, inBytes);
-  //commandL = lIn;
-  //commandR = rIn;
-  //commandMotors(commandL, commandR);
-} 
+  // Compile everything into one buffer
+  for(int i = 0; i < 8; ++i) {
+    buf[i] = eV[i];
+  }
+  for(int i = 0; i < NSENSORS*2; ++i) {
+    buf[i+8] = sensorsToSend[i];
+  }
+  // Send information
+  serSend(buf, NSENSORS*2+8);
+  // Get and execute motor commands
+  getMotorCommands();
+  commandMotors(lIn, rIn);
+}
 
+// Serial library
+
+// Waits for an 'S' byte (start byte), and then sends a confirmation it got the message.
 void serReceive() {
   int cTime;
-  
-  Serial.write('R');
-  while((inByte = Serial.read()) != 'S');
+  while(Serial.read() != 'S');
   cTime = micros();
   while(!Serial.available() && (micros()-cTime) < TIMEOUT);
   if(!Serial.available()) {
@@ -140,51 +162,37 @@ void serReceive() {
   }
   Serial.setTimeout((TIMEOUT*inBytes)/1000);
   Serial.readBytes(buf, inBytes);
+  Serial.write('E');
 }
 
 // Tries to send until it gets a reply confirming it sent the message.
 void serSend(char *msg, char length) {
-  //int cTime;
-  //bool replied = false;
-  //while(!replied) {
-  while(Serial.read() != 'R');
+  long cTime;
   Serial.write('S');
   Serial.write(length);
   for(char *i = msg; (i-msg) < length; ++i) {
     Serial.write(*i);
   }
   while(Serial.read() != 'E');
-    //cTime = micros();
-    //while(!Serial.available() && (micros()-cTime) < TIMEOUT);
-    //if(Serial.available() && Serial.read() == 'E') {
-      //replied = true;
-    //}
-  //}
-}
-
-// Tries to read a message. Blocks until it gets an S.
-void serRead(){
-  while((inByte = Serial.read()) != 'S');
-  while(!Serial.available());
-  int lIn1 = -1*(int)Serial.read();
-  while(!Serial.available());
-  int lIn2 = (int)Serial.read();
-  lIn = lIn1+lIn2;
-  while(!Serial.available());
-  int rIn1 = -1*(int)Serial.read();
-  while(!Serial.available());
-  int rIn2 = (int)Serial.read();
-  rIn = rIn1+rIn2;
-  //while(!Serial.available());
 }
 
 void getMotorCommands(){
   serReceive();
+  if(inBytes == 4) {
+    lIn = -1*(int)buf[0] + (int)buf[1];
+    rIn = -1*(int)buf[2] + (int)buf[3];
+  }
+}
+
+void commandMotors(int lCommand,int rCommand){
+  digitalWrite(LMotorDirPin,dir(lCommand));
+  digitalWrite(RMotorDirPin,dir(rCommand));
+  analogWrite(LMotorPWMPin,abs(lCommand));
+  analogWrite(RMotorPWMPin,abs(rCommand));
+  //analogWrite(VacuumPWMPin,20);
 }
 
 void writeEncoderVals(){
-  char eV[8];
-  char le1,le2,le3,le4,re1,re2,re3,re4;
   eV[0] = leftEncoderTicks>>24;
   eV[1] = (leftEncoderTicks>>16)&0xFF;
   eV[2] = (leftEncoderTicks>>8)&0xFF;
@@ -194,34 +202,16 @@ void writeEncoderVals(){
   eV[5] = (rightEncoderTicks>>16)&0xFF;
   eV[6] = (rightEncoderTicks>>8)&0xFF;
   eV[7] = rightEncoderTicks&0xFF;
-
-  serSend(eV, 8);
 }
 
-void commandMotors(int lCommand,int rCommand){
-  digitalWrite(LMotorDirPin,dir(lCommand));
-  digitalWrite(RMotorDirPin,dir(rCommand));
-  analogWrite(LMotorPWMPin,abs(lCommand));
-  analogWrite(RMotorPWMPin,abs(rCommand));
-}
 
 // Interrupt service routines for the left motor's quadrature encoder
-void HandleLeftMotorInterruptA(){
+void HandleLeftMotorInterrupt(){
   // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
   leftEncoderTicks -= 1 - 2*(digitalReadFast(LeftEncoderPinB)^digitalReadFast(LeftEncoderPinA));
 }
- 
-void HandleLeftMotorInterruptB(){
-  // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
-  leftEncoderTicks += 1 - 2*(digitalReadFast(LeftEncoderPinB)^digitalReadFast(LeftEncoderPinA));
-}
 
-void HandleRightMotorInterruptA(){
-  // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
-  rightEncoderTicks += 1 - 2*(digitalReadFast(RightEncoderPinB)^digitalReadFast(RightEncoderPinA));
-}
- 
-void HandleRightMotorInterruptB(){
+void HandleRightMotorInterrupt(){
   // XOR ^: 0 if the same, 1 otherwise. Assuming they only take values in {0,1} (true for digitalReadFast)
   rightEncoderTicks -= 1 - 2*(digitalReadFast(RightEncoderPinB)^digitalReadFast(RightEncoderPinA));
 }

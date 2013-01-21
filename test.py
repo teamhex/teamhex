@@ -8,6 +8,9 @@ January 2013
 import signal
 import sys
 import math
+import ctypes
+import os
+import time
 
 import dgonzOLD.motorControl as mot
 import dgonzOLD.serialComm as ser
@@ -17,9 +20,6 @@ import dgonzOLD.sensor as sensor
 import pygame
 from pygame.locals import *
 
-import ctypes
-import os
-
 path = os.path.dirname(os.path.realpath(__file__))
 myMap = ctypes.CDLL(path+'/mapping/_mapping.so')
 
@@ -27,15 +27,15 @@ class CPosition(ctypes.Structure):
     _fields_ = [('x', (ctypes.c_double)),
                 ('y', (ctypes.c_double))]
 
-debug = False
+debug = True
 
 pose = [0,0,0]
 sensorPoints = [(0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False)]
 
 def initialize():
-    ser.initialize(encPort = '/dev/arduino_encoders',motPort = '/dev/arduino_control', myBaud = 1000000)
+    ser.initialize(contPort = '/dev/arduino_encoders', myBaud = 1000000)
 
-def update():
+def update(stop = False):
     global pose,sensorPoints
 
     #-------------------------Receive Data from Arduino
@@ -43,21 +43,25 @@ def update():
     data = ser.receiveData()
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
-    print pose,data
+
     #-------------------------Update Sensor Values
 
     sensorPoints = sensor.update(data[2:7],pose)
     
     #-------------------------Debug Print
     if debug:
-        print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
+        print pose,data
+        #print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
+    if(stop):
+        ser.sendCommand(mot.getMotorCommandBytes(0,0))
+    else:
+        ser.sendCommand(mot.getMotorCommandBytes(0,0))
 
 def cleanQuit(signal, frame):
     print "Interrupt received"
     pygame.quit()
-    #ser.sendCommand(mot.getMotorCommandBytes(0,0))
-    ser.serEnc.stop()
-    #ser.serMot.stop()
+    update(True)
+    ser.serCont.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)

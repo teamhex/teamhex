@@ -23,7 +23,7 @@ pose = [x,y,theta]
 
 b = 6 #Wheel Base (measured from wheel to center point) [inches]
 rWheel = 3.8625/2.0 #Wheel radius [inches]
-cpr = 2000.0 #[Encoder counts per revolution]
+cpr = 200.0 #[Encoder counts per revolution]
 kG = 13.5#Gear Ratio
 
 #Previous timestep encoder values
@@ -54,17 +54,17 @@ def update(lEnc, rEnc):
     global thetaR
     global tPrev
     
-    if((lEnc-lEncPrev)>diff or (rEnc-rEncPrev)>diff):
-        lEnc = lEncPrev
-        rEnc = rEncPrev
+    #if((lEnc-lEncPrev)>diff or (rEnc-rEncPrev)>diff):
+    #    lEnc = lEncPrev
+    #    rEnc = rEncPrev
     
     dt = time.time()-tPrev #In order to normalize the velocity with respect to time.
-    dThetaL = (lEnc-lEncPrev)/cpr/kG*2*math.pi
-    dThetaR = (rEnc-rEncPrev)/cpr/kG*2*math.pi
+    dThetaL = float(lEnc-lEncPrev)/cpr/kG*2*math.pi
+    dThetaR = float(rEnc-rEncPrev)/cpr/kG*2*math.pi
     dThetaLdt = dThetaL/dt
     dThetaRdt = dThetaR/dt
-    thetaL = (lEnc)/cpr/kG*2*math.pi
-    thetaR = (rEnc)/cpr/kG*2*math.pi
+    thetaL = float(lEnc)/cpr/kG*2*math.pi
+    thetaR = float(rEnc)/cpr/kG*2*math.pi
     
     #Update the angle 
     """
