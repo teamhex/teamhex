@@ -17,6 +17,7 @@ wp = [] #list of waypoints. One waypoint is of form [x, y, theta] in [inches, in
 IDLE = 0
 ROTATING = 1
 TRANSLATING = 2
+ORIENT = 3
 
 state = IDLE
 
@@ -94,7 +95,26 @@ def update(myPose):
             #print "Rotate and pray", pose[2], desiredAngle, angDiff(pose[2],desiredAngle)
             return [0,angTroller.update(angDiff(pose[2],desiredAngle))]
     elif(state == TRANSLATING):
-        if(comparePose(pose,desiredPose)):
+        if(compareDist(pose,desiredPose)):
+            if(desiredPose[3] == False):
+                if(len(wp)==0):
+                    state= IDLE
+                    print "WPState = IDLE"
+                    return [0,0]
+                else:
+                    wp.pop(0)
+                    state = IDLE
+                    print "WPState = IDLE"
+                    return [0,0]
+            else:
+                state = ORIENT
+                print "WPState = ORIENT"
+                angTroller.setDesired(0,reset = True)
+                return [0,0]
+        else:
+            return [transTroller.update(dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),angTroller.update(angDiff(pose[2],desiredAngle))]
+    elif(state == ORIENT):
+        if(compareAng(pose[2],desiredPose[2])):
             if(len(wp)==0):
                 state= IDLE
                 print "WPState = IDLE"
@@ -105,8 +125,7 @@ def update(myPose):
                 print "WPState = IDLE"
                 return [0,0]
         else:
-            return [transTroller.update(dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),angTroller.update(angDiff(pose[2],desiredAngle))]
-
+            return [0,angTroller.update(angDiff(pose[2],desiredPose[2]))]
 def addWaypoint(newWP):
     global wp
     wp.append(newWP)
