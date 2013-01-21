@@ -44,15 +44,30 @@ void specialWall(double wallX, double wallY, int wallType) {
 }
 
 void closestBall(CPosition *res) {
-  Position *r = findClosestBall(robotPosition);
+  BallCond bc;
+  Position *r = findClosest(robotPosition,bc);
   if(r == NULL) {
-    res->x = robotPosition.x;
-    res->y = robotPosition.y;
+    res->x = -1;
+    res->y = -1;
   }
   else {
     RealPosition realBall = gridToReal(*r);
     res->x = realBall.x;
     res->y = realBall.y;
+  }
+}
+
+void closestUnvisited(CPosition *res) {
+  UnvisitedCond uc;
+  Position *r = findClosest(robotPosition, uc);
+  if(r == NULL) {
+    res->x = -1;
+    res->y = -1;
+  }
+  else {
+    RealPosition realUnvisited = gridToReal(*r);
+    res->x = realUnvisited.x;
+    res->y = realUnvisited.y;
   }
 }
 
@@ -79,6 +94,10 @@ void getPlanWP(int wpI, CPosition *WP) {
     WP->x = pos.x;
     WP->y = pos.y;
   }
+  else {
+    WP->x = -1;
+    WP->y = -1;
+  }
 }
 
 void printCells() {
@@ -88,8 +107,8 @@ void printCells() {
 int getWall(int x, int y) {
   RealPosition realPos = {x,y};
   Position gridPos = realToGrid(realPos);
-  return (int)configMap[gridPos.l][gridPos.c];
-  //return (int)isWall(theMap[gridPos.l][gridPos.c]);
+  //return (int)configMap[gridPos.l][gridPos.c];
+  return (int)isWall(theMap[gridPos.l][gridPos.c]);
 }
 
 // int main() {

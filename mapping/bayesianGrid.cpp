@@ -10,20 +10,23 @@ bool visited[HEIGHT][WIDTH];
 Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 int allnNeighbors[HEIGHT][WIDTH];
 
-Position::Position(): l(-1),c(-1) {}
+Position::Position(): l(-1),c(-1) {}    pXAndEvent = prior*pDGivenX;
+
 Position::Position(int line, int column): l(line),c(column) {}
 
 double bayesianUpdate(double prior, double pDGivenX, double pDGivenNX, bool dHappened) {
-  double pXAndEvent, pNXAndEvent;
+  double pXAndEvent, pNXAndEvent, result;
   if(dHappened) {
     pXAndEvent = prior*pDGivenX;
-    pNXAndEvent = (1-prior)*pDGivenNX;
+    pNXAndEvent = (1.0-prior)*pDGivenNX;
   }
   else {
-    pXAndEvent = prior*(1-pDGivenX);
-    pNXAndEvent = (1-prior)*(1-pDGivenNX);
+    pXAndEvent = prior*(1.0-pDGivenX);
+    pNXAndEvent = (1.0-prior)*(1.0-pDGivenNX);
   }
-  return pXAndEvent/(pXAndEvent + pNXAndEvent);
+  // We never return anything smaller than 1% or bigger than 99% -- doubles start messing up eventually.
+  result = pXAndEvent/(pXAndEvent + pNXAndEvent);
+  return MIN(MAX(result, 1.0-MAX_PROB),MAX_PROB);
 }
 
 Position realToGrid(RealPosition &real) {
@@ -137,6 +140,7 @@ void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &r
       c = robotGridPos.c;
 
       theMap[l][c].pWall = bayesianUpdate(theMap[l][c].pWall, P_DETECT_GIVEN_WALL, P_DETECT_GIVEN_NWALL, false);
+      theMap[l][c].visited = true;
 
       nNeighbors = allnNeighbors[l][c];
       neighbors = allNeighbors[l][c];
@@ -155,6 +159,7 @@ void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &r
     l = gridPos.l;
     c = gridPos.c;
     if(isValid(gridPos)) {
+      theMap[l][c].visited = true;
       if(detect) {
 	theMap[l][c].pBall = bayesianUpdate(theMap[l][c].pBall, P_DETECT_GIVEN_BALL, P_DETECT_GIVEN_NBALL, false);
       }
@@ -201,7 +206,7 @@ bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos) {
   return false;
 }
 
-Position *findClosestBall(RealPosition &robotPos) {
+Position *findClosest(RealPosition &robotPos, Condition &cond) {  
   int nNeighbors;
   Position **neighbors;
   Position *cur;
@@ -221,8 +226,8 @@ Position *findClosestBall(RealPosition &robotPos) {
     neighbors = allNeighbors[cur->l][cur->c];
 
     for(int i = 0; i < nNeighbors; ++i) {
-      if(!visited[neighbors[i]->l][neighbors[i]->c]) {
-	if(isBall(theMap[neighbors[i]->l][neighbors[i]->c])) {
+      if(!visited[neighbors[i]->l][neighbors[i]->c] && !isWall(theMap[neighbors[i]->l][neighbors[i]->c])) {
+	if(cond(theMap[neighbors[i]->l][neighbors[i]->c])) {
 	  return neighbors[i];
 	}
 	if(distanceSqr(start, *neighbors[i]) <= FIELD_DIAMETER*FIELD_DIAMETER) {
@@ -235,6 +240,13 @@ Position *findClosestBall(RealPosition &robotPos) {
   return NULL;
 }
 
+bool BallCond::operator ()(Cell &c) {
+  return isBall(c);
+}
+
+bool UnvisitedCond::operator ()(Cell &c) {
+  return !c.visited;
+}
 
 void initialize() {
   Position p;
@@ -243,6 +255,7 @@ void initialize() {
       theMap[l][c].pWall = PRIOR_WALL;
       theMap[l][c].pBall = PRIOR_BALL;
       theMap[l][c].wallType = NORMAL_WALL;
+      theMap[l][c].visited = false;
       p.l = l;
       p.c = c;
       setNeighbors(p);
