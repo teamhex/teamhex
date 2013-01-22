@@ -16,6 +16,7 @@ import dgonzOLD.motorControl as mot
 import dgonzOLD.serialComm as ser
 import dgonzOLD.odo as odo
 import dgonzOLD.sensor as sensor
+import dgonzOLD.waypointNav as waypointNav
 
 import pygame
 from pygame.locals import *
@@ -33,7 +34,8 @@ pose = [0,0,0]
 sensorPoints = [(0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False)]
 
 def initialize():
-    ser.initialize(contPort = '/dev/arduino_encoders', myBaud = 1000000)
+    ser.initialize()
+    waypointNav.initialize()
 
 def update(stop = False):
     global pose,sensorPoints
@@ -41,6 +43,7 @@ def update(stop = False):
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receiveData()
+    #print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
 
@@ -49,13 +52,21 @@ def update(stop = False):
     sensorPoints = sensor.update(data[2:7],pose)
     
     #-------------------------Debug Print
+
+    [forSet,angSet] = waypointNav.update(pose)
+    mot.setAngForVels(forSet,angSet)
+
+    [dThetaLdt,dThetaRdt] = odo.getVel()
+    [lCommand,rCommand] = mot.update(dThetaLdt,dThetaRdt)
+    #print lCommand,rCommand,dThetaLdt,dThetaRdt
     if debug:
-        print pose,data
+        pass#print pose,sensorPoints
         #print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
     if(stop):
         ser.sendCommand(mot.getMotorCommandBytes(0,0))
     else:
-        ser.sendCommand(mot.getMotorCommandBytes(0,0))
+        s = mot.getMotorCommandBytes(lCommand,rCommand)
+        ser.sendCommand(s)
 
 def cleanQuit(signal, frame):
     print "Interrupt received"
@@ -86,6 +97,8 @@ def goMap():
     WHITE_COLOR = pygame.Color(255,255,255)
     BLACK_COLOR = pygame.Color(0,0,0)
     BLUE_COLOR = pygame.Color(0,0,255)
+
+    waypointNav.addWaypoints([[85,75,0,False]])
 
     q = False
     i = 0

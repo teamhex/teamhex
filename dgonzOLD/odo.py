@@ -23,7 +23,7 @@ pose = [x,y,theta]
 
 b = 6 #Wheel Base (measured from wheel to center point) [inches]
 rWheel = 3.8625/2.0 #Wheel radius [inches]
-cpr = 200.0 #[Encoder counts per revolution]
+cpr = 1000.0 #[Encoder counts per revolution]
 kG = 13.5#Gear Ratio
 
 #Previous timestep encoder values
@@ -55,6 +55,7 @@ def update(lEnc, rEnc):
     global tPrev
     
     #if((lEnc-lEncPrev)>diff or (rEnc-rEncPrev)>diff):
+    #   
     #    lEnc = lEncPrev
     #    rEnc = rEncPrev
     
