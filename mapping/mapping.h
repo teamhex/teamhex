@@ -12,6 +12,7 @@ extern "C" {
   void ballDetected(double ballX, double ballY, int ballColor);
   void specialWall(double wallX, double wallY, int wallType);
   void closestBall(CPosition *res);
+  void closestUnvisited(CPosition *res);
 
   void setConfigSpace();
   void goPlan(double goalX, double goalY);
