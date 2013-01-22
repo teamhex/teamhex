@@ -13,7 +13,7 @@ import os
 import time
 
 import dgonzOLD.motorControl as mot
-import dgonzOLD.serialComm as ser
+import dgonzOLD.serialCommOld as ser
 import dgonzOLD.odo as odo
 import dgonzOLD.sensor as sensor
 import dgonzOLD.waypointNav as waypointNav
@@ -43,7 +43,7 @@ def update(stop = False):
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receiveData()
-    #print data
+    print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
 
@@ -72,7 +72,8 @@ def cleanQuit(signal, frame):
     print "Interrupt received"
     pygame.quit()
     update(True)
-    ser.serCont.stop()
+    ser.serMot.stop()
+    ser.serEnc.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)
