@@ -81,14 +81,14 @@ def goMap():
     main_surface = pygame.display.set_mode((width, height))
     pygame.display.set_caption('Robot location and vision')
 
-    ROBOT_RADIUS = 7*3
+    ROBOT_RADIUS = 7
     RED_COLOR = pygame.Color(255,0,0)
     WHITE_COLOR = pygame.Color(255,255,255)
     BLACK_COLOR = pygame.Color(0,0,0)
     BLUE_COLOR = pygame.Color(0,0,255)
 
     q = False
-    
+    i = 0
     while not q:
         update()
         myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
@@ -96,30 +96,31 @@ def goMap():
             if(sen[2]):
                 myMap.wallDetected(ctypes.c_double(sen[0]), ctypes.c_double(sen[1]))
             else:
-                pass#myMap.wallNotDetected(ctypes.c_double(sen[0]), ctypes.c_double(sen[1]))
+                myMap.wallNotDetected(ctypes.c_double(sen[0]), ctypes.c_double(sen[1]))
+        if i == 0:
+            mw,mh = main_surface.get_size()
+            main_surface.fill(WHITE_COLOR)
+            myMap.setConfigSpace()
+            for x in xrange(realHeight):
+                for y in xrange(realWidth):
+                    if(myMap.getWall(x,y)):
+                        pygame.draw.rect(main_surface,BLACK_COLOR,(x*3,(realHeight-y)*3,3,3))
         
-        mw,mh = main_surface.get_size()
-        main_surface.fill(WHITE_COLOR)
-        myMap.setConfigSpace()
-        for x in xrange(realHeight):
-            for y in xrange(realWidth):
-                if(myMap.getWall(x,y)):
-                    pygame.draw.rect(main_surface,BLACK_COLOR,(x*3,(realHeight-y)*3,3,3))
-        
-        pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0])*3,(realHeight-int(pose[1]))*3), ROBOT_RADIUS, 1)
-        for s in sensorPoints:
-            if(s[2]):
-                color = RED_COLOR
-            else:
-                color = BLACK_COLOR
-            pygame.draw.line(main_surface, color, (int(pose[0]*3),(realHeight-int(pose[1]))*3), (int(s[0])*3,(realHeight-int(s[1]))*3), 1)
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                q = True
-        if not q:
-            pygame.display.update()
-        fpsClock.tick(30)
+            pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0])*3,(realHeight-int(pose[1]))*3), ROBOT_RADIUS*3, 3)
+            for s in sensorPoints:
+                if(s[2]):
+                    color = RED_COLOR
+                else:
+                    color = BLACK_COLOR
+                pygame.draw.line(main_surface, color, (int(pose[0])*3,(realHeight-int(pose[1]))*3), (int(s[0])*3,(realHeight-int(s[1]))*3), 3)
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    q = True
+            if not q:
+                pygame.display.update()
+        i = (i+1)%30
+        fpsClock.tick(120)
     cleanQuit('','')
 
 goMap()

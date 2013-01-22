@@ -53,11 +53,6 @@ def update():
     pose = odo.update(data[0],data[1])
     
     #-------------------------Update Sensor Values
-    if(wayPointNav.state == TRANSLATING):
-        for i in data[2:7]:
-            if(i > 250):
-                wayPointNav.wp = []
-    
     sensorPoints = sensor.update(data[2:7],pose)
     
     #-------------------------Debug Print
@@ -110,7 +105,7 @@ def testVel():
 
 def testWaypoints():
     initialize()
-    waypointNav.addWaypoints([[36,0,0],[36,36,0],[76,0,0],[-36,-36,0],[0,0,0],[3,0,0]])
+    waypointNav.addWaypoints([[36,0,0,False],[36,36,0,False],[76,0,0,False],[-36,-36,0,False],[0,0,0,False],[3,0,0,False]])
     t0 = time.time()
     while(True):
         update()
@@ -138,4 +133,4 @@ def goMock():
         update()
         
 
-goMock()
+testWaypoints()

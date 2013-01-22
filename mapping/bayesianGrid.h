@@ -9,6 +9,8 @@
 #define PRIOR_BALL 0.2
 #define PRIOR_WALL 0.3
 
+#define MAX_PROB 0.99
+
 #define NORMAL_WALL 0
 #define YELLOW_WALL 1
 #define PURPLE_WALL 2
@@ -26,8 +28,8 @@
 #define isBall(C) ((C).pBall > BALL_THRESHOLD)
 #define isValid(P) (((P).l >= 0 && (P).l < HEIGHT) && ((P).c >= 0 && (P).c < WIDTH))
 
-#define WIDTH 150
-#define HEIGHT 150
+#define WIDTH 450
+#define HEIGHT 450
 #define REAL_WIDTH 150.0
 #define REAL_HEIGHT 150.0
 #define CELL_WIDTH ((double)REAL_WIDTH/(double)WIDTH)
@@ -39,6 +41,9 @@
 
 #define NNEIGHBORS 8
 
+#define MAX(I,J) ((I)>(J)?(I):(J))
+#define MIN(I,J) ((I)<(J)?(I):(J))
+
 // Grid defined the following way:
 //   Top left corner is (0,0) in real coordinates.
 //   The coordinates of a grid cell are defined by its top left vertex.
@@ -48,6 +53,7 @@ struct Cell {
   double pWall;
   int ballType;
   int wallType;
+  bool visited;
 };
 
 struct Position {
@@ -63,6 +69,21 @@ struct RealPosition {
   double y;
 };
 
+class Condition {
+ public:
+  virtual bool operator ()(Cell &c) = 0;
+};
+
+class BallCond: public Condition {
+ public:
+  bool operator ()(Cell &c);
+};
+
+class UnvisitedCond: public Condition {
+ public:
+  bool operator ()(Cell &c);
+};
+
 // Given p(X) (prior) and p(D\X), p(D\~X), and whether D or ~D happened, return new p(X)
 // D is an event, X is a random variable.
 double bayesianUpdate(double prior, double pDGivenX, double pDGivenNX, bool dHappened);
@@ -76,7 +97,7 @@ void bfsMark(int type, bool detect, Position &start, int radius);
 
 void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &robotPos);
 bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos);
-Position *findClosestBall(RealPosition &robotPos);
+Position *findClosest(RealPosition &robotPos, Condition &cond);
 
 void initialize();
 

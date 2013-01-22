@@ -10,7 +10,7 @@ bool visited[HEIGHT][WIDTH];
 Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 int allnNeighbors[HEIGHT][WIDTH];
 
-Position::Position(): l(-1),c(-1) {}    pXAndEvent = prior*pDGivenX;
+Position::Position(): l(-1),c(-1) {}
 
 Position::Position(int line, int column): l(line),c(column) {}
 
