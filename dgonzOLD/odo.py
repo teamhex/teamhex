@@ -21,9 +21,9 @@ y = 75
 theta = 0
 pose = [x,y,theta]
 
-b = 6 #Wheel Base (measured from wheel to center point) [inches]
-rWheel = 3.8625/2.0 #Wheel radius [inches]
-cpr = 1000.0 #[Encoder counts per revolution]
+b = 5.719#6.125 #Wheel Base (measured from wheel to center point) [inches]
+rWheel = 3.86/2.0 #Wheel radius [inches]
+cpr = 2000.0 #[Encoder counts per revolution]
 kG = 13.5#Gear Ratio
 
 #Previous timestep encoder values

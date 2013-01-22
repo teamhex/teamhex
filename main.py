@@ -13,7 +13,7 @@ import os
 import time
 
 import dgonzOLD.motorControl as mot
-import dgonzOLD.serialComm as ser
+import dgonzOLD.serialCommOld as ser
 import dgonzOLD.odo as odo
 import dgonzOLD.sensor as sensor
 import dgonzOLD.waypointNav as waypointNav
@@ -71,7 +71,8 @@ def cleanQuit(signal, frame):
     print "Interrupt received"
     pygame.quit()
     update(True)
-    ser.serCont.stop()
+    ser.serMot.stop()
+    ser.serEnc.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)

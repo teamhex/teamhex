@@ -17,16 +17,25 @@ import dgonzOLD.serialCommOld as ser
 import dgonzOLD.odo as odo
 import dgonzOLD.sensor as sensor
 import dgonzOLD.waypointNav as waypointNav
+import dgonzOLD.vision as vision
+import colorsys
 
 import pygame
 from pygame.locals import *
 
 path = os.path.dirname(os.path.realpath(__file__))
 myMap = ctypes.CDLL(path+'/mapping/_mapping.so')
+myCam = ctypes.CDLL(path+'/vision/_vision.so')
 
 class CPosition(ctypes.Structure):
     _fields_ = [('x', (ctypes.c_double)),
                 ('y', (ctypes.c_double))]
+
+class CPixelArea(ctypes.Structure):
+    _fields_ = [('pixel', (ctypes.c_int)),
+                ('centerL', (ctypes.c_int)),
+                ('centerC', (ctypes.c_int)),
+                ('size', (ctypes.c_int))]
 
 debug = True
 
@@ -46,6 +55,7 @@ def update(stop = False):
     print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
+    #print pose
 
     #-------------------------Update Sensor Values
 
@@ -55,6 +65,7 @@ def update(stop = False):
 
     [forSet,angSet] = waypointNav.update(pose)
     mot.setAngForVels(forSet,angSet)
+    #mot.setAngForVels(0,0)
 
     [dThetaLdt,dThetaRdt] = odo.getVel()
     [lCommand,rCommand] = mot.update(dThetaLdt,dThetaRdt)
@@ -74,13 +85,17 @@ def cleanQuit(signal, frame):
     update(True)
     ser.serMot.stop()
     ser.serEnc.stop()
+    myCam.stopCam()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)
 
 def goMap():
     global myMap
+    global myCam
     myMap.initMapping()
+    myCam.startCam('/dev/video2')
+    myCam.enableCam()
     
     initialize()
 
@@ -94,17 +109,23 @@ def goMap():
     pygame.display.set_caption('Robot location and vision')
 
     ROBOT_RADIUS = 7
+    BALL_RADIUS = 2.5/2.0
     RED_COLOR = pygame.Color(255,0,0)
     WHITE_COLOR = pygame.Color(255,255,255)
     BLACK_COLOR = pygame.Color(0,0,0)
     BLUE_COLOR = pygame.Color(0,0,255)
 
-    waypointNav.addWaypoints([[85,75,0,False]])
+    waypointNav.addWaypoints([[85,75,0,False]])#,[75,75,0,True]])
+
+    xRes,yRes = 320,240
 
     q = False
     i = 0
     while not q:
         update()
+        myCam.setPicture()
+        myCam.getInfo()
+        
         myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
         for sen in sensorPoints:
             if(sen[2]):
@@ -121,6 +142,17 @@ def goMap():
                         pygame.draw.rect(main_surface,BLACK_COLOR,(x*3,(realHeight-y)*3,3,3))
         
             pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0])*3,(realHeight-int(pose[1]))*3), ROBOT_RADIUS*3, 3)
+
+            for j in xrange(myCam.getNAreas()):
+                a = CPixelArea()
+                myCam.getArea(j,ctypes.byref(a))
+                x,y = vision.getBallCoords(yRes-a.centerL, a.centerC-xRes, pose)
+                if(340 < (a.pixel>>16) or 20 > (a.pixel>>16)):
+                    c = RED_COLOR
+                else:
+                    c = BLUE_COLOR
+                pygame.draw.circle(main_surface, c, (int(x)*3, int(realHeight-y)*3), int(BALL_RADIUS)*3, 0)
+            
             for s in sensorPoints:
                 if(s[2]):
                     color = RED_COLOR
@@ -133,8 +165,8 @@ def goMap():
                     q = True
             if not q:
                 pygame.display.update()
-        i = (i+1)%30
-        fpsClock.tick(120)
+        i = 0
+        fpsClock.tick(30)
     cleanQuit('','')
 
 goMap()
