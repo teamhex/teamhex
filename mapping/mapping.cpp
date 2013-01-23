@@ -82,6 +82,7 @@ void goPlan(double goalX, double goalY) {
   Position goalPos = realToGrid(goal);
   Position startPos = realToGrid(robotPosition);
   makePlan(startPos, goalPos);
+  smoothPlan();
 }
 
 int getPlanLength() {

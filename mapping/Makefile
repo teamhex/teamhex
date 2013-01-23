@@ -7,7 +7,8 @@ WARNINGS = -Wextra
 CFLAGS = -std=gnu99
 CPPFLAGS = $(WARNINGS) -O3 -fPIC
 
-target debug: CPPFLAGS = $(WARNINGS) -g -O3
+target debug: CPPFLAGS = $(WARNINGS) -g -fPIC
+target debugLibrary: CPPFLAGS = $(WARNINGS) -g -fPIC
 
 OBJECTS= bayesianGrid.o mapping.o motionPlanner.o
 
@@ -16,6 +17,8 @@ all:	app
 app:	mapping
 
 debug: clean mapping
+
+debugLibrary: clean library
 
 lib:	library
 

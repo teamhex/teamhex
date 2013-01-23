@@ -123,6 +123,9 @@ bool isLineClear(Position &start, Position &end) {
 }
 
 void smoothPlan() {
+  if(planLength < 2) {
+    return;
+  }
   Position *cur = plan[0];
   int nextPointInd = 1;
   for(int i = 2; i < planLength; ++i) {
