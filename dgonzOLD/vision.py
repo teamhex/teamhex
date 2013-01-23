@@ -3,17 +3,19 @@ MASLAB Vision processing module
 Team Hex
 January 2013
 """
-xRes = 340
+import math
+
+xRes = 320
 yRes = 240
 thetaViewX = math.radians(60)
 thetaViewY = math.radians(90)
 focalY = (yRes/2.0)/math.tan(thetaViewY/2.0)
 focalX = (xRes/2.0)/math.tan(thetaViewX/2.0)
-thetaCam = math.radians(45)
-hCam = 5.0
+thetaCam = math.radians(20)
+hCam = 4.5
 rBall = 1.125
 
-robotRadius = 7
+robotRadius = 7.0
 
 def calcY(py):
     phi= math.atan(py/focalY)

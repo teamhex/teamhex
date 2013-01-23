@@ -18,6 +18,9 @@ import dgonzOLD.odo as odo
 import dgonzOLD.sensor as sensor
 import dgonzOLD.waypointNav as waypointNav
 
+import pygame
+from pygame.locals import *
+
 
 path = os.path.dirname(os.path.realpath(__file__))
 myMap = ctypes.CDLL(path+'/mapping/_mapping.so')
@@ -105,7 +108,19 @@ def goMap():
 
     initialize()
 
-    realHeight,realWidth = 150,150
+    pygame.init()
+    fpsClock = pygame.time.Clock()
+
+    width,height = 900,900
+    main_surface = pygame.display.set_mode((width, height))
+    pygame.display.set_caption('Robot location and vision')
+
+    RED_COLOR = pygame.Color(255,0,0)
+    WHITE_COLOR = pygame.Color(255,255,255)
+    BLACK_COLOR = pygame.Color(0,0,0)
+    BLUE_COLOR = pygame.Color(0,0,255)
+
+    realHeight,realWidth = 900,900
 
     ROBOT_RADIUS = 7
 
@@ -134,30 +149,29 @@ def goMap():
                 waypoints.append([p.x,p.y,0,False])
             print waypoints
             waypointNav.addWaypoints(waypoints)
-        # if i == 0:
-        #     mw,mh = main_surface.get_size()
-        #     main_surface.fill(WHITE_COLOR)
-        #     myMap.setConfigSpace()
-        #     for x in xrange(realHeight):
-        #         for y in xrange(realWidth):
-        #             if(myMap.getWall(x,y)):
-        #                  pygame.draw.rect(main_surface,BLACK_COLOR,(x*3,(realHeight-y)*3,3,3))
+        mw,mh = main_surface.get_size()
+        main_surface.fill(WHITE_COLOR)
+        myMap.setConfigSpace()
+        for x in xrange(realHeight):
+            for y in xrange(realWidth):
+                if(myMap.getWall(x,y)):
+                    pygame.draw.rect(main_surface,BLACK_COLOR,(x,(realHeight-y),3,3))
 
-        #     pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0])*3,(realHeight-int(pose[1]))*3), ROBOT_RADIUS*3, 3)
-        #     for s in sensorPoints:
-        #         if(s[2]):
-        #             color = RED_COLOR
-        #         else:
-        #             color = BLACK_COLOR
-        #         pygame.draw.line(main_surface, color, (int(pose[0])*3,(realHeight-int(pose[1]))*3), (int(s[0])*3,(realHeight-int(s[1]))*3), 3)
-        #     for event in pygame.event.get():
-        #         if event.type == QUIT:
-        #             pygame.quit()
-        #             q = True
-        #     if not q:
-        #         pygame.display.update()
-        # i = (i+1)%30
-        # fpsClock.tick(120)
+        pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0]),(realHeight-int(pose[1]))), ROBOT_RADIUS, 3)
+        print "Here"
+        for s in sensorPoints:
+            if(s[2]):
+                color = RED_COLOR
+            else:
+                color = BLACK_COLOR
+            pygame.draw.line(main_surface, color, (int(pose[0]),(realHeight-int(pose[1]))), (int(s[0]),(realHeight-int(s[1]))), 3)
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                q = True
+        if not q:
+            pygame.display.update()
+        fpsClock.tick(120)
     cleanQuit('','')
 
 goMap()

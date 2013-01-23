@@ -9,9 +9,10 @@ int main(int argc, char **argv) {
   }
   printf("Starting capture and tracking on device %s\n", device.c_str());
   startCam(device.c_str());
-  //enableCam();
+  enableCam();
   for(int i = 0; i < 500; ++i) {
-    setFilePicture((char *)"/home/rgomes/Dropbox/snapshots2/snap1");
+    setPicture();
+    //setFilePicture((char *)"/home/rgomes/Dropbox/snapshots2/snap1");
     getInfo();
     printf("%d\n", getNAreas());
     getchar();

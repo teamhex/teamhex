@@ -21,8 +21,9 @@ ORIENT = 3
 
 state = IDLE
 
-angTroller = PIDController(2.850,.025,.008)
-transTroller = PIDController(-.1625,-.00225,-.005)#Values for 2 feet: (-.1625,-.000225,-0.005)
+angTroller = PIDController(4.5,0.004,0.005)#.00025,.0.008)
+transAngTroller = PIDController(4.5,0.004,0.005)#0.2,.00001,.08)
+transTroller = PIDController(.3,0,0.005)#.1625,.000225,.005)#Values for 2 feet: (-.1625,-.000225,-0.005)
 
 def initialize():
     print "waypoint Navigator initialized"
@@ -44,14 +45,14 @@ def angDiff(ang1,ang2):
 
 def compareAng(ang1,ang2):
     #TODO: fix the angles, right now robot will "unwind"
-    eTheta = 2.0*math.pi/180.0
+    eTheta = 2.0*math.pi/360.0
     if(abs(angDiff(ang1,ang2))<eTheta):
         return True
     else:
         return False
 
 def compareDist(pose1,pose2):
-    eXY = 5.0
+    eXY = 0.5
     if(dist(pose1[0],pose1[1],pose2[0],pose2[1])<eXY):
         return True
     else:
@@ -94,7 +95,7 @@ def update(myPose):
             state = TRANSLATING
             print "WPState = TRANSLATING"
             transTroller.setDesired(0,reset = True)
-            angTroller.setDesired(0,reset = True)
+            transAngTroller.setDesired(0,reset = True)
             return [0,0]
         else:
             #print "Rotate and pray", pose[2], desiredAngle, angDiff(pose[2],desiredAngle)
@@ -117,7 +118,7 @@ def update(myPose):
                 angTroller.setDesired(0,reset = True)
                 return [0,0]
         else:
-            return [transTroller.update(dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),angTroller.update(angDiff(pose[2],desiredAngle))]
+            return [transTroller.update(-dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),transAngTroller.update(angDiff(pose[2],desiredAngle))]
     elif(state == ORIENT):
         if(compareAng(pose[2],desiredPose[2])):
             if(len(wp)==0):

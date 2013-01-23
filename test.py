@@ -13,15 +13,17 @@ import os
 import time
 
 import dgonzOLD.motorControl as mot
-import dgonzOLD.serialCommOld as ser
+import dgonzOLD.serialComm as ser
 import dgonzOLD.odo as odo
 import dgonzOLD.sensor as sensor
 import dgonzOLD.waypointNav as waypointNav
 import dgonzOLD.vision as vision
 import colorsys
 
-import pygame
-from pygame.locals import *
+#import pygame
+#from pygame.locals import *
+
+import random
 
 path = os.path.dirname(os.path.realpath(__file__))
 myMap = ctypes.CDLL(path+'/mapping/_mapping.so')
@@ -52,7 +54,7 @@ def update(stop = False):
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receiveData()
-    print data
+    #print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
     #print pose
@@ -60,16 +62,29 @@ def update(stop = False):
     #-------------------------Update Sensor Values
 
     sensorPoints = sensor.update(data[2:7],pose)
+    #print sensorPoints
+    if waypointNav.state == waypointNav.TRANSLATING:
+        for i in sensorPoints[1:6]:
+            if ((pose[0]-i[0])**2 + (pose[1]-i[1])**2) < 9.0**2:
+                waypointNav.wp = []
+                waypointNav.addWaypoint([pose[0],pose[1],pose[2],False])
     
     #-------------------------Debug Print
 
     [forSet,angSet] = waypointNav.update(pose)
+    if abs(forSet) > 3.5:
+        forSet = 3.5*abs(forSet)/forSet
+    if abs(angSet) > 3.5:
+        angSet = 3.5*abs(angSet)/angSet
     mot.setAngForVels(forSet,angSet)
+    #print forSet,angSet
+    #print pose
+    #mot.setAngForVels(1,0)
     #mot.setAngForVels(0,0)
 
     [dThetaLdt,dThetaRdt] = odo.getVel()
     [lCommand,rCommand] = mot.update(dThetaLdt,dThetaRdt)
-    #print lCommand,rCommand,dThetaLdt,dThetaRdt
+    #print lCommand,rCommand
     if debug:
         pass#print pose,sensorPoints
         #print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
@@ -81,10 +96,9 @@ def update(stop = False):
 
 def cleanQuit(signal, frame):
     print "Interrupt received"
-    pygame.quit()
+    #pygame.quit()
     update(True)
-    ser.serMot.stop()
-    ser.serEnc.stop()
+    ser.serCont.stop()
     myCam.stopCam()
     sys.exit(0)
 
@@ -94,35 +108,36 @@ def goMap():
     global myMap
     global myCam
     myMap.initMapping()
-    myCam.startCam('/dev/video2')
+    myCam.startCam('/dev/video1')
     myCam.enableCam()
     
     initialize()
 
     realHeight,realWidth = 150,150
 
-    pygame.init()
-    fpsClock = pygame.time.Clock()
+    #pygame.init()
+    #fpsClock = pygame.time.Clock()
 
-    width,height = 450,450
-    main_surface = pygame.display.set_mode((width, height))
-    pygame.display.set_caption('Robot location and vision')
+    # width,height = 450,450
+    # main_surface = pygame.display.set_mode((width, height))
+    # pygame.display.set_caption('Robot location and vision')
 
     ROBOT_RADIUS = 7
     BALL_RADIUS = 2.5/2.0
-    RED_COLOR = pygame.Color(255,0,0)
-    WHITE_COLOR = pygame.Color(255,255,255)
-    BLACK_COLOR = pygame.Color(0,0,0)
-    BLUE_COLOR = pygame.Color(0,0,255)
-
-    waypointNav.addWaypoints([[85,75,0,False]])#,[75,75,0,True]])
+    # RED_COLOR = pygame.Color(255,0,0)
+    # WHITE_COLOR = pygame.Color(255,255,255)
+    # BLACK_COLOR = pygame.Color(0,0,0)
+    # BLUE_COLOR = pygame.Color(0,0,255)
 
     xRes,yRes = 320,240
 
     q = False
     i = 0
-    while not q:
+    start = time.time()
+    while not q and time.time()-start < 60*3:
         update()
+        if len(waypointNav.wp) == 0:
+            waypointNav.addWaypoints([[random.randrange(30,120), random.randrange(30,120), 0, False]])
         myCam.setPicture()
         myCam.getInfo()
         
@@ -133,40 +148,40 @@ def goMap():
             else:
                 myMap.wallNotDetected(ctypes.c_double(sen[0]), ctypes.c_double(sen[1]))
         if i == 0:
-            mw,mh = main_surface.get_size()
-            main_surface.fill(WHITE_COLOR)
+            # mw,mh = main_surface.get_size()
+            # main_surface.fill(WHITE_COLOR)
             myMap.setConfigSpace()
-            for x in xrange(realHeight):
-                for y in xrange(realWidth):
-                    if(myMap.getWall(x,y)):
-                        pygame.draw.rect(main_surface,BLACK_COLOR,(x*3,(realHeight-y)*3,3,3))
+            # for x in xrange(realHeight):
+            #     for y in xrange(realWidth):
+            #         if(myMap.getWall(x,y)):
+            #             pygame.draw.rect(main_surface,BLACK_COLOR,(x*3,(realHeight-y)*3,3,3))
         
-            pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0])*3,(realHeight-int(pose[1]))*3), ROBOT_RADIUS*3, 3)
+            # pygame.draw.circle(main_surface, BLUE_COLOR, (int(pose[0])*3,(realHeight-int(pose[1]))*3), ROBOT_RADIUS*3, 3)
 
-            for j in xrange(myCam.getNAreas()):
-                a = CPixelArea()
-                myCam.getArea(j,ctypes.byref(a))
-                x,y = vision.getBallCoords(yRes-a.centerL, a.centerC-xRes, pose)
-                if(340 < (a.pixel>>16) or 20 > (a.pixel>>16)):
-                    c = RED_COLOR
-                else:
-                    c = BLUE_COLOR
-                pygame.draw.circle(main_surface, c, (int(x)*3, int(realHeight-y)*3), int(BALL_RADIUS)*3, 0)
-            
-            for s in sensorPoints:
-                if(s[2]):
-                    color = RED_COLOR
-                else:
-                    color = BLACK_COLOR
-                pygame.draw.line(main_surface, color, (int(pose[0])*3,(realHeight-int(pose[1]))*3), (int(s[0])*3,(realHeight-int(s[1]))*3), 3)
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    q = True
-            if not q:
-                pygame.display.update()
+            # for j in xrange(myCam.getNAreas()):
+            #     a = CPixelArea()
+            #     myCam.getArea(j,ctypes.byref(a))
+            #     x,y = vision.getBallCoords(a.centerC-xRes/2.0, yRes/2.0-a.centerL, pose)
+            #     if(340 < (a.pixel>>16) or 20 > (a.pixel>>16)):
+            #         c = RED_COLOR
+            #     else:
+            #         c = BLUE_COLOR
+            #     pygame.draw.circle(main_surface, c, (int(x)*3, int(realHeight-y)*3), int(BALL_RADIUS)*3, 0)
+           
+            # for s in sensorPoints:
+            #     if(s[2]):
+            #         color = RED_COLOR
+            #     else:
+            #         color = BLACK_COLOR
+            #     pygame.draw.line(main_surface, color, (int(pose[0])*3,(realHeight-int(pose[1]))*3), (int(s[0])*3,(realHeight-int(s[1]))*3), 3)
+            # for event in pygame.event.get():
+            #     if event.type == QUIT:
+            #         pygame.quit()
+            #         q = True
+            # if not q:
+            #     pygame.display.update()
         i = 0
-        fpsClock.tick(30)
+        #fpsClock.tick(30)
     cleanQuit('','')
 
 goMap()

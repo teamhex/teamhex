@@ -101,7 +101,7 @@ void getInfo() {
   //blur(rgbPictureMeh);
   startHSL(rgbPictureMeh);
   findObjectsInImage(LOOKER,BLUE_WALLS);
-  //saveRGB(rgbPictureMeh, "tmp/snap");
+  saveRGB(rgbPictureMeh, "tmp/snap");
 }
 
 int getNAreas() {
