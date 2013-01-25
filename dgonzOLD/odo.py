@@ -21,7 +21,7 @@ y = 75
 theta = 0
 pose = [x,y,theta]
 
-b = 6.2# between 6.15 and 6.2 #6.125 #Wheel Base (measured from wheel to center point) [inches]
+b = 6.1875# between 6.15 and 6.2 #6.125 #Wheel Base (measured from wheel to center point) [inches]
 rWheel = 3.8625/2.0 #Wheel radius [inches]
 cpr = 200.0 #[Encoder counts per revolution]
 kG = 13.5#Gear Ratio
