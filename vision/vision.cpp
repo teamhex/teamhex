@@ -111,8 +111,8 @@ int getNAreas() {
 void getArea(int i, struct CPixelArea *res) {
   if(i >= 0 && i < nAreas) {
     res->pixel = areas[i]->startPixel;
-    res->centerL = areas[i]->center.l;
-    res->centerC = areas[i]->center.c;
+    res->centerL = (areas[i]->topLeft.l+areas[i]->bottomRight.l)/2.0;
+    res->centerC = (areas[i]->topLeft.c+areas[i]->bottomRight.c)/2.0;
     res->size = areas[i]->size;
   }
   else {

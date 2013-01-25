@@ -13,11 +13,15 @@ class CPixelArea(ctypes.Structure):
 
 def init():
     global myCam
-    myCam.startCam("/dev/maslab_camera")
-    #myCam.enableCam()
+    myCam.startCam("/dev/video1")
+    myCam.enableCam()
 
 def setSnap(i):
     myCam.setFilePicture("/home/rgomes/Dropbox/snapshots2/snap"+str(i))
+    myCam.getInfo()
+
+def getInfo():
+    myCam.setPicture()
     myCam.getInfo()
 
 def nAreas():

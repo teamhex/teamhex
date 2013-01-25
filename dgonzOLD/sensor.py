@@ -18,7 +18,7 @@ sensorParams = [
 #    (897.604638959, 1.77016250212),
 #    (974.108058761, -12.0463125541)]
 
-maxDistance = [10,10,10,10,10]
+maxDistance = [16,16,16,16,16]
 
 irVals = [0,0,0,0,0,0]
 angArray = [math.pi/2.0,math.pi/4.0,0,-math.pi/4.0,-math.pi/2.0]
