@@ -28,12 +28,12 @@ maxAngVel = kV*vMax/60.0*kG*2.0*math.pi #Max Wheel Angular Velocity in RPM
 #PI Velocity controllers
 
 conv=256/(vMax*kV)*(60)/(2*math.pi) #[PWM/(rad/s)]
-kP = conv*27.5
+kP = conv*15#27.5
 kI = .1*kP
-kD = 0
+kD = .001
 lVelTroller = PIDController(kP, kI, kD)
 rVelTroller = PIDController(kP, kI, kD)
-balanceTroller = PIDController(mykP = .00, mykI = 0, mykD = 0)
+balanceTroller = PIDController(mykP = .01, mykI = 0, mykD = 0)
 
 def limitAngVel(a):
     if a>maxAngVel:

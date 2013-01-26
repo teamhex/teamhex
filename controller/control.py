@@ -159,3 +159,11 @@ def clearWayPoints():
 
 def stop():
     stopCommand.value = 1;
+    
+def test():
+    initialize()
+    setWayPointControl()
+    addWayPoints([[75+48,75,0,False],[75+24,75,0,False],[75+48,75,0,False],[75,75,0,True]])#[75+5*12,75,0,False]
+    raw_input()
+    stop()
+

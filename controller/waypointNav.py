@@ -28,9 +28,9 @@ state = IDLE
 active = False
 myTimer = 0;
 
-angTroller = PIDController(4.5,0.004,0.005)#.00025,.0.008)
-transAngTroller = PIDController(4.5,0.004,0.01)#0.2,.00001,.08)
-transTroller = PIDController(.01,.001,.005)
+angTroller = PIDController(4.75,0.00875,0.02)#.00025,.0.008)
+transAngTroller = PIDController(7.5,0.0025,0.01)#0.2,.00001,.08)
+transTroller = PIDController(.1,.001,.02)
 
 def activate():
     global active
@@ -73,7 +73,7 @@ def compareAng(ang1,ang2):
         return False
 
 def compareDist(pose1,pose2):
-    eXY = 0.125
+    eXY = 0.25
     if(dist(pose1[0],pose1[1],pose2[0],pose2[1])<eXY):
         return True
     else:
