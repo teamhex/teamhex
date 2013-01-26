@@ -21,10 +21,18 @@ debug = False
 
 WAYPOINT = 0
 BASIC = 1
-CONTROLLER = BASIC
+CONTROLLER = mp.Value('i', BASIC)
 
-basicFor = 0
-basicAng = 0
+basicFor = mp.Value('d', 0.0)
+basicAng = mp.Value('d', 0.0)
+
+# WPNav communication memory
+commandQueue = mp.Queue()
+# Commands:
+ACTIVATE = 0
+DEACTIVATE = 1
+CLEAR = 2
+wpQueue = mp.Queue()
 
 pose = [0,0,0]
 sensorData = [0.0,0.0,0.0,0.0,0.0]
@@ -37,11 +45,10 @@ sharedArray = mp.Array('d',[0]*8)
 # Set by other processes to stop this process.
 stopCommand = mp.Value('i',0)
 
-updateLock = mp.Lock()
-
 def initialize():
     ser.initialize()
     wpNav.initialize()
+    stopCommand.value = 0
     p = mp.Process(target=controlLoop)
     p.start()
 
@@ -64,18 +71,16 @@ def update(stop = False):
     # Can get them from either a basic (forward,angular) velocity
     # controller, or from a waypoint navigator.
     # Synchronized through locking because modifications will only affect this part
-    updateLock.acquire()
-    if(CONTROLLER == WAYPOINT):
+    if(CONTROLLER.value == WAYPOINT):
         [forSet,angSet] = wpNav.update(pose)
-    elif(CONTROLLER == BASIC):
-        [forSet,angSet] = basicFor,basicAng
-    updateLock.release()
+    elif(CONTROLLER.value == BASIC):
+        [forSet,angSet] = basicFor.value,basicAng.value
     
     #-------------------------Limit speeds according to empirical results
     if abs(forSet) > MAX_FOR_SPEED:
         forSet = math.copysign(MAX_FOR_SPEED,forSet)
     if abs(angSet) > MAX_ANG_SPEED:
-        angSet = mat.copysign(MAX_ANG_SPEED,angSet)
+        angSet = math.copysign(MAX_ANG_SPEED,angSet)
     mot.setAngForVels(forSet,angSet)
 
     #-------------------------Use motor controller to get motor commands
@@ -94,9 +99,18 @@ def update(stop = False):
 
 def controlLoop(freq=50):
     global pose,sensorData,stopCommand,sharedArray
-    
     while stopCommand.value == 0:
         start = time.time()
+        while not wpQueue.empty():
+            wpNav.addWaypoints(wpQueue.get())
+        while not commandQueue.empty():
+            com = commandQueue.get()
+            if(com == ACTIVATE):
+                wpNav.activate()
+            elif(com == DEACTIVATE):
+                wpNav.deactivate()
+            elif(com == CLEAR):
+                wpNav.clearWaypoints()
         update()
         sharedArray[:] = [pose[0],pose[1],pose[2]] + sensorData
         time.sleep(max(0,1/float(freq) - (time.time()-start)))
@@ -115,38 +129,22 @@ def getSensorPoints():
     return sen.update(getSensorData(), getPose())
 
 def setBasicControl(forward=0.0,angular=0.0):
-    global updateLock,CONTROLLER,basicFor,basicAng
-    updateLock.acquire()
-
-    wpNav.deactivate()
-    CONTROLLER = BASIC
-    basicFor = forward
-    basicAng = angular
-
-    updateLock.release()
+    global CONTROLLER,basicFor,basicAng
+    commandQueue.put(DEACTIVATE)
+    CONTROLLER.value = BASIC
+    basicFor.value = forward
+    basicAng.value = angular
 
 def setWayPointControl():
-    global updateLock,CONTROLLER
-    updateLock.acquire()
-    
-    wpNav.activate()
-    CONTROLLER=WAYPOINT
-
-    updateLock.release()
+    global CONTROLLER
+    commandQueue.put(ACTIVATE)
+    CONTROLLER.value = WAYPOINT
 
 def addWayPoints(wps):
-    updateLock.acquire()
-
-    wpNav.addWaypoints(wps)
-
-    updateLock.release()
+    wpQueue.put(wps)
 
 def clearWayPoints():
-    updateLock.acquire()
-
-    wpNav.clearWaypoints()
-
-    updateLock.release()
+    commandQueue.put(CLEAR)
 
 def stop():
     stopCommand.value = 1;
