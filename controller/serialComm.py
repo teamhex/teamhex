@@ -5,7 +5,7 @@ dgonz@mit.edu
 January 2013
 """
 
-import lib.superserial as serial
+import superserial as serial
 import struct
 
 def initialize(contPort = '/dev/arduino_encoders', contBaud = 1000000):
@@ -23,8 +23,8 @@ def receiveData():
     while True:
         data = serCont.receive()
         if(len(data) == 8+5*2):
-            return (ord(data[0])<<24 | ord(data[1]<<16 | ord(data[2])<<8 | ord(data[3]),
-                    ord(data[4])<<24 | ord(data[5])<<16 | ord(data[6])<<8 | ord(data[7]),
+            return (struct.unpack('>l', data[0:4])[0],
+                    struct.unpack('>l', data[4:8])[0],
                     ord(data[8])<<8 | ord(data[9]),
                     ord(data[10])<<8 | ord(data[11]),
                     ord(data[12])<<8 | ord(data[13]),

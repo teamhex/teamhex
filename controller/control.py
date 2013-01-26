@@ -27,12 +27,12 @@ basicFor = 0
 basicAng = 0
 
 pose = [0,0,0]
-sensorData = [(0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False)]
+sensorData = [0.0,0.0,0.0,0.0,0.0]
 
 # Array shared with other processes, format:
 # Positions 0,1 and 2 contains respectively: pose x,y,theta
 # Positions 3,4,5,6 and 7 contain the 5 sensor values from sensor 0 to sensor 4 respectively.
-sharedData = mp.Array('d',[0]*8)
+sharedArray = mp.Array('d',[0]*8)
 
 # Set by other processes to stop this process.
 stopCommand = mp.Value('i',0)
@@ -42,7 +42,7 @@ updateLock = mp.Lock()
 def initialize():
     ser.initialize()
     wpNav.initialize()
-    p = Process(target=controlLoop)
+    p = mp.Process(target=controlLoop)
     p.start()
 
 def update(stop = False):
@@ -58,16 +58,16 @@ def update(stop = False):
     pose = odo.update(data[0],data[1])
 
     #-------------------------Store sensor data
-    sensorData = data[3:8]
+    sensorData = list(data[2:8])
 
     #-------------------------Get forward and angular velocities
     # Can get them from either a basic (forward,angular) velocity
     # controller, or from a waypoint navigator.
     # Synchronized through locking because modifications will only affect this part
     updateLock.acquire()
-    if(controller == WAYPOINT):
+    if(CONTROLLER == WAYPOINT):
         [forSet,angSet] = wpNav.update(pose)
-    elif(controller == BASIC):
+    elif(CONTROLLER == BASIC):
         [forSet,angSet] = basicFor,basicAng
     updateLock.release()
     
@@ -99,8 +99,9 @@ def controlLoop(freq=50):
         start = time.time()
         update()
         sharedArray[:] = [pose[0],pose[1],pose[2]] + sensorData
-        sleep(max(0,1/float(freq) - (time.time()-start)))
+        time.sleep(max(0,1/float(freq) - (time.time()-start)))
     update(stop=True)
+    ser.serCont.stop()
 
 def getPose():
     global sharedArray

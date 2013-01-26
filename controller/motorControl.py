@@ -5,7 +5,7 @@ dgonz@mit.edu
 January 2013
 """
 
-from lib.PIDControlModule import PIDController
+from PIDControlModule import PIDController
 import math
 import time
 
