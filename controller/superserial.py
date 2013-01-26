@@ -33,6 +33,7 @@ class Serial:
         #try:
         while not replied:
             self.connection.timeout = None
+        # Wait for a request first.
             self.connection.write('S' + chr(len(msg)) + str(msg))
             self.connection.flushOutput()
             self.connection.timeout = 0.01
@@ -48,8 +49,10 @@ class Serial:
         self.connection.timeout = None
         buf = ''
         size = 0
-        while self.connection.read() != 'S':
-            pass
+        # Send a request
+        c = self.connection.read()
+        while c != 'S':
+            c = self.connection.read()
         self.connection.timeout = 0.01
         buf = self.connection.read()
         if(buf != ''):

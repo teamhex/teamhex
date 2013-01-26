@@ -6,7 +6,7 @@ November 2012
 """
 
 class PIDController():
-    def __init__(self,mykP = 1.0, mykI = 0.0, mykD = 0.0):
+    def __init__(self,mykP = 1, mykI = 0, mykD = 0):
         self.kP = mykP
         self.kI = mykI
         self.kD = mykD
@@ -22,9 +22,12 @@ class PIDController():
         self.kI = mykI
     def setKD(self,mykD):
         self.kD = mykD
-    def setDesired (self,myxDesired):
+    def setDesired (self,myxDesired,reset = False):
         self.xDesired = myxDesired
-        #self.xErrorIntegral = 0
+        if (reset):
+            self.xErrorIntegral = 0
+    def getDesired(self):
+        return self.xDesired
     def update(self,xSense):
         self.xError = self.xDesired - xSense
         self.dXError = self.xError - self.xErrorPrevious

@@ -54,7 +54,7 @@ def update(stop = False):
     #-------------------------Receive Data from Arduino
     # data is [Left Encoder, Right Encoder]
     data = ser.receiveData()
-    print data
+    #print data
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
     #print pose
@@ -97,10 +97,10 @@ def update(stop = False):
 
 def cleanQuit(signal, frame):
     print "Interrupt received"
-    #pygame.quit()
+    pygame.quit()
     update(True)
     ser.serCont.stop()
-    #myCam.stopCam()
+    myCam.stopCam()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)
@@ -163,6 +163,7 @@ def goMap():
                 a = CPixelArea()
                 myCam.getArea(j,ctypes.byref(a))
                 x,y = vision.getBallCoords(a.centerC-xRes/2.0, yRes/2.0-a.centerL, pose)
+                print x,y, a.centerC, a.centerL
                 if(340 < (a.pixel>>16) or 20 > (a.pixel>>16)):
                     c = RED_COLOR
                 else:
@@ -182,7 +183,7 @@ def goMap():
             if not q:
                 pygame.display.update()
         i = 0
-        fpsClock.tick(120)
+        fpsClock.tick(5)
     cleanQuit('','')
 
 goMap()
