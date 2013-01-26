@@ -21,8 +21,8 @@ y = 75
 theta = 0
 pose = [x,y,theta]
 
-b = 6.1875# between 6.15 and 6.2 #6.125 #Wheel Base (measured from wheel to center point) [inches]
-rWheel = 3.8625/2.0 #Wheel radius [inches]
+b = 5.89# between 6.15 and 6.2 #6.125 #Wheel Base (measured from wheel to center point) [inches]
+rWheel = 3.90625/2.0 #Wheel radius [inches]
 cpr = 200.0 #[Encoder counts per revolution]
 kG = 13.5#Gear Ratio
 
@@ -33,6 +33,12 @@ rEncPrev = 0
 tPrev = 0
 
 #note, a positive change in wheel angle signifies thr robot moving forward, for BOTH wheels. 
+
+def initialize(myX = 75,myY = 75):
+    global x,y
+    x = myX
+    y = myY
+    
 
 def fixAngle(ang):
     ang = ang%(math.pi*2.0)
