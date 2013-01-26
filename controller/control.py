@@ -45,10 +45,21 @@ sharedArray = mp.Array('d',[0]*8)
 # Set by other processes to stop this process.
 stopCommand = mp.Value('i',0)
 
+# Map specs (important to put the robot in the middle)
+realWidth = 150
+realHeight = 150
+
 def initialize():
     ser.initialize()
     wpNav.initialize()
+    odo.initialize(realWidth/2.0, realHeight/2.0)
+    
+    wpNav.clearWaypoints()
+    wpNav.deactivate()
+    CONTROLLER.value = BASIC
+    basicFor.value = basicAng.value = 0.0
     stopCommand.value = 0
+
     p = mp.Process(target=controlLoop)
     p.start()
 
