@@ -5,7 +5,6 @@ dgonz@mit.edu
 January 2013
 """
 
-import motorControl as mot
 import serialComm as ser
 import odo as odo
 import distanceSensors as sen
@@ -46,8 +45,8 @@ sharedArray = mp.Array('d',[0]*8)
 stopCommand = mp.Value('i',0)
 
 # Map specs (important to put the robot in the middle)
-realWidth = 150
-realHeight = 150
+realWidth = 450
+realHeight = 450
 
 inWait = mp.Value('i',1)
 
@@ -100,17 +99,7 @@ def update(stop = False):
         forSet = math.copysign(MAX_FOR_SPEED,forSet)
     if abs(angSet) > MAX_ANG_SPEED:
         angSet = math.copysign(MAX_ANG_SPEED,angSet)
-    mot.setAngForVels(forSet,angSet)
-
-    #-------------------------Use motor controller to get motor commands
-    [dThetaLdt,dThetaRdt] = odo.getVel()
-    [lCommand,rCommand] = mot.update(dThetaLdt,dThetaRdt)
-
-    #-------------------------Send commands (send STOPS command if update is told to stop)
-    if(stop):
-        ser.serCont.send('STOPS')
-    else:
-        ser.sendCommand(mot.getMotorCommandBytes(lCommand,rCommand))
+    ser.motSetAngForVels(forSet,angSet)
 
     #-------------------------Debug Print
     if debug:
@@ -134,7 +123,6 @@ def controlLoop(freq=50):
         sharedArray[:] = [pose[0],pose[1],pose[2]] + sensorData
         time.sleep(max(0,1/float(freq) - (time.time()-start)))
     update(stop=True)
-    ser.serCont.stop()
 
 def getPose():
     global sharedArray
@@ -170,6 +158,9 @@ def clearWayPoints():
 
 def stop():
     stopCommand.value = 1;
+
+def waitingForCommand():
+    return inWait.value != 0
     
 def test():
     initialize()

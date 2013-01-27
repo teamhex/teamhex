@@ -20,9 +20,9 @@ angVel = 0
 
 kV = 340.32 #Motor voltage constant [RPM/Volt]
 vMax = 12.0 #Maximum motor voltage [volts]
-b = 6 #Wheel Base (measured from wheel to center point) [inches]
+b = 5.89 #Wheel Base (measured from wheel to center point) [inches]
 kG = 13.5 #Gear Ratio
-dWheel = 3.8625 #Wheel diameter [inches]
+dWheel = 3.90625 #Wheel diameter [inches]
 maxAngVel = kV*vMax/60.0*kG*2.0*math.pi #Max Wheel Angular Velocity in RPM
 
 #PI Velocity controllers
