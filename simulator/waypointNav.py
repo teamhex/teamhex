@@ -98,7 +98,7 @@ def update(myPose):
         if(len(wp)!=0):
             desiredPose = wp[0]
         else:
-            desiredPose = myPose
+            desiredPose = myPose+[False]
 
         pose = myPose
         desiredAngle = getAngle(pose[0],pose[1],desiredPose[0],desiredPose[1])
@@ -141,7 +141,7 @@ def update(myPose):
                 return [0,0]
             else:
                 #Note -dist(vomit) is negative because it is the error (error = desired-actual = 0-dist())
-                return [transTroller.update(-dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),transAngTroller.update(angDiff(pose[2],desiredAngle))]
+                return [-transTroller.update(dist(pose[0],pose[1],desiredPose[0],desiredPose[1])),transAngTroller.update(angDiff(pose[2],desiredAngle))]
         elif (state == DELAY2):
             if (time.time()-myTimer>=.5):
                 if(desiredPose[3] == False):

@@ -3,8 +3,8 @@
 
 #define P_DETECT_GIVEN_BALL 0.9
 #define P_DETECT_GIVEN_NBALL 0.1
-#define P_DETECT_GIVEN_WALL 0.9
-#define P_DETECT_GIVEN_NWALL 0.1
+#define P_DETECT_GIVEN_WALL 0.99
+#define P_DETECT_GIVEN_NWALL 0.01
 
 #define PRIOR_BALL 0.2
 #define PRIOR_WALL 0.3
@@ -28,16 +28,16 @@
 #define isBall(C) ((C).pBall > BALL_THRESHOLD)
 #define isValid(P) (((P).l >= 0 && (P).l < HEIGHT) && ((P).c >= 0 && (P).c < WIDTH))
 
-#define WIDTH 450
-#define HEIGHT 450
-#define REAL_WIDTH 150.0
-#define REAL_HEIGHT 150.0
+#define WIDTH 150
+#define HEIGHT 150
+#define REAL_WIDTH 450.0
+#define REAL_HEIGHT 450.0
 #define CELL_WIDTH ((double)REAL_WIDTH/(double)WIDTH)
 #define CELL_HEIGHT ((double)REAL_HEIGHT/(double)HEIGHT)
 
 #define BALL_RADIUS 1.25
 #define ROBOT_RADIUS 7.0
-#define FIELD_DIAMETER 60
+#define FIELD_DIAMETER 640
 
 #define NNEIGHBORS 8
 
@@ -69,21 +69,6 @@ struct RealPosition {
   double y;
 };
 
-class Condition {
- public:
-  virtual bool operator ()(Cell &c) = 0;
-};
-
-class BallCond: public Condition {
- public:
-  bool operator ()(Cell &c);
-};
-
-class UnvisitedCond: public Condition {
- public:
-  bool operator ()(Cell &c);
-};
-
 // Given p(X) (prior) and p(D\X), p(D\~X), and whether D or ~D happened, return new p(X)
 // D is an event, X is a random variable.
 double bayesianUpdate(double prior, double pDGivenX, double pDGivenNX, bool dHappened);
@@ -97,7 +82,6 @@ void bfsMark(int type, bool detect, Position &start, int radius);
 
 void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &robotPos);
 bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos);
-Position *findClosest(RealPosition &robotPos, Condition &cond);
 
 void initialize();
 
@@ -105,7 +89,8 @@ void printMap();
 
 extern Position *queue[HEIGHT*WIDTH];
 extern int queueFront, queueBack;
-extern bool visited[HEIGHT][WIDTH];
+extern int operationID;
+extern int visited[HEIGHT][WIDTH];
 extern Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 extern int allnNeighbors[HEIGHT][WIDTH];
 

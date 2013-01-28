@@ -9,6 +9,7 @@ import serialComm as ser
 import odo as odo
 import distanceSensors as sen
 import waypointNav as wpNav
+import wallFollow as wf
 
 import multiprocessing as mp
 import math
@@ -20,7 +21,8 @@ debug = False
 
 WAYPOINT = 0
 BASIC = 1
-CONTROLLER = mp.Value('i', BASIC)
+WALL_FOLLOW = 2
+CONTROLLER = mp.Value('i', WALL_FOLLOW)
 
 basicFor = mp.Value('d', 0.0)
 basicAng = mp.Value('d', 0.0)
@@ -31,6 +33,7 @@ commandQueue = mp.Queue()
 ACTIVATE = 0
 DEACTIVATE = 1
 CLEAR = 2
+FOLLOW_START = 3
 wpQueue = mp.Queue()
 
 pose = [0,0,0]
@@ -49,21 +52,28 @@ realWidth = 450
 realHeight = 450
 
 inWait = mp.Value('i',1)
+forMove = mp.Value('i',0)
+
+ROBOT_RADIUS = 7.0
 
 def initialize():
     ser.initialize()
     wpNav.initialize()
+    wf.initialize()
     odo.initialize(realWidth/2.0, realHeight/2.0)
     
     wpNav.clearWaypoints()
     wpNav.deactivate()
-    CONTROLLER.value = BASIC
+    CONTROLLER.value = WAYPOINT
     basicFor.value = basicAng.value = 0.0
     stopCommand.value = 0
     inWait.value = 1
 
     p = mp.Process(target=controlLoop)
     p.start()
+
+def distance(p1,p2):
+    return math.sqrt((p1[0]-p2[0])**2 + (p1[1]-p2[1])**2)
 
 def update(stop = False):
     global pose,sensorData,updateLock,CONTROLLER,basicFor,basicAng
@@ -72,13 +82,23 @@ def update(stop = False):
     # data is [Left Encoder, Right Encoder,
     #          Sensor 0 (leftmost), Sensor 1, Sensor 2 (center, forward),
     #          Sensor 3, Sensor 4 (rightmost)]
-    data = ser.receiveData()
+    data = ser.receiveEnc()
 
     #-------------------------Update Odometry
     pose = odo.update(data[0],data[1])
 
     #-------------------------Store sensor data
-    sensorData = list(data[2:8])
+    sensorData = ser.receiveSensors(pose)
+
+    sp = getSensorPoints()
+
+    for s in sp[1:4]:
+        if distance(pose,s) < ROBOT_RADIUS:
+            if(wpNav.state == wpNav.TRANSLATING):
+                clearWayPoints()
+            basicFor.value = 0.0
+            if wf.state == wf.FOLLOW:
+                wf.reset()
 
     #-------------------------Get forward and angular velocities
     # Can get them from either a basic (forward,angular) velocity
@@ -93,6 +113,13 @@ def update(stop = False):
     elif(CONTROLLER.value == BASIC):
         inWait.value = 1
         [forSet,angSet] = basicFor.value,basicAng.value
+    elif(CONTROLLER.value == WALL_FOLLOW):
+        [forSet,angSet] = wf.update(sp,pose)
+
+    if forSet == 0:
+        forMove.value = 0
+    else:
+        forMove.value = 1
     
     #-------------------------Limit speeds according to empirical results
     if abs(forSet) > MAX_FOR_SPEED:
@@ -119,6 +146,8 @@ def controlLoop(freq=50):
                 wpNav.deactivate()
             elif(com == CLEAR):
                 wpNav.clearWaypoints()
+            elif(com == FOLLOW_START):
+                wf.reset()
         update()
         sharedArray[:] = [pose[0],pose[1],pose[2]] + sensorData
         time.sleep(max(0,1/float(freq) - (time.time()-start)))
@@ -138,6 +167,10 @@ def getSensorPoints():
 def setBasicControl(forward=0.0,angular=0.0):
     global CONTROLLER,basicFor,basicAng
     inWait.value = 1
+    if forward == 0:
+        forMove.value = 0
+    else:
+        forMove.value = 1
     commandQueue.put(DEACTIVATE)
     CONTROLLER.value = BASIC
     basicFor.value = forward
@@ -148,12 +181,18 @@ def setWayPointControl():
     commandQueue.put(ACTIVATE)
     CONTROLLER.value = WAYPOINT
 
+def setWallFollowControl():
+    global CONTROLLER
+    commandQueue.put(FOLLOW_START)
+    CONTROLLER.value = WALL_FOLLOW
+
 def addWayPoints(wps):
     inWait.value = 0
     wpQueue.put(wps)
 
 def clearWayPoints():
     inWait.value = 1
+    forMove.value = 0
     commandQueue.put(CLEAR)
 
 def stop():
@@ -161,6 +200,9 @@ def stop():
 
 def waitingForCommand():
     return inWait.value != 0
+
+def movingForward():
+    return forMove.value != 0
     
 def test():
     initialize()

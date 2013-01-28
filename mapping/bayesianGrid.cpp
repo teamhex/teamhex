@@ -5,7 +5,8 @@
 Cell theMap[HEIGHT][WIDTH];
 Position *queue[HEIGHT*WIDTH];
 int queueFront, queueBack;
-bool visited[HEIGHT][WIDTH];
+int operationID;
+int visited[HEIGHT][WIDTH];
 
 Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 int allnNeighbors[HEIGHT][WIDTH];
@@ -24,9 +25,14 @@ double bayesianUpdate(double prior, double pDGivenX, double pDGivenNX, bool dHap
     pXAndEvent = prior*(1.0-pDGivenX);
     pNXAndEvent = (1.0-prior)*(1.0-pDGivenNX);
   }
-  // We never return anything smaller than 1% or bigger than 99% -- doubles start messing up eventually.
+  // We are careful to not return 1 or 0, due to doubles messing up.
   result = pXAndEvent/(pXAndEvent + pNXAndEvent);
-  return MIN(MAX(result, 1.0-MAX_PROB),MAX_PROB);
+  if(result == 1 || result == 0) {
+    return prior;
+  }
+  else {
+    return result;
+  }
 }
 
 Position realToGrid(RealPosition &real) {
@@ -77,8 +83,8 @@ void bfsMark(int type, bool detect, Position &start, int radius) {
   Position **neighbors;
   Position *cur;
 
-  memset(visited, false, HEIGHT*WIDTH*sizeof(bool));
-  visited[start.l][start.c] = true;
+  ++operationID;
+  visited[start.l][start.c] = operationID;
 
   queueFront = queueBack = 0;
   queue[queueBack++] = &start;
@@ -89,6 +95,7 @@ void bfsMark(int type, bool detect, Position &start, int radius) {
     nNeighbors = allnNeighbors[cur->l][cur->c];
     neighbors = allNeighbors[cur->l][cur->c];
 
+    theMap[cur->l][cur->c].visited = true;
     switch(type) {
     case ROBOT_BODY:
       theMap[cur->l][cur->c].pWall = bayesianUpdate(theMap[cur->l][cur->c].pWall, P_DETECT_GIVEN_WALL, P_DETECT_GIVEN_NWALL, detect);
@@ -100,8 +107,8 @@ void bfsMark(int type, bool detect, Position &start, int radius) {
     }
 
     for(int i = 0; i < nNeighbors; ++i) {
-      if(!visited[neighbors[i]->l][neighbors[i]->c]) {
-	visited[neighbors[i]->l][neighbors[i]->c] = true;
+      if(visited[neighbors[i]->l][neighbors[i]->c] != operationID) {
+	visited[neighbors[i]->l][neighbors[i]->c] = operationID;
 	if(distanceSqr(start, *neighbors[i]) <= radius*radius) {
 	  queue[queueBack++] = neighbors[i];
 	}
@@ -138,6 +145,8 @@ void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &r
     while(robotGridPos.l != gridPos.l || robotGridPos.c != gridPos.c) {
       l = robotGridPos.l;
       c = robotGridPos.c;
+
+      //printf("%d %d %d %d\n", l, c, gridPos.l, gridPos.c);
 
       theMap[l][c].pWall = bayesianUpdate(theMap[l][c].pWall, P_DETECT_GIVEN_WALL, P_DETECT_GIVEN_NWALL, false);
       theMap[l][c].visited = true;
@@ -206,50 +215,10 @@ bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos) {
   return false;
 }
 
-Position *findClosest(RealPosition &robotPos, Condition &cond) {  
-  int nNeighbors;
-  Position **neighbors;
-  Position *cur;
-
-  Position start = realToGrid(robotPos);
-
-  memset(visited, false, HEIGHT*WIDTH*sizeof(bool));
-  visited[start.l][start.c] = true;
-
-  queueFront = queueBack = 0;
-  queue[queueBack++] = &start;
-
-  while(queueBack > queueFront) {
-    cur = queue[queueFront++];
-
-    nNeighbors = allnNeighbors[cur->l][cur->c];
-    neighbors = allNeighbors[cur->l][cur->c];
-
-    for(int i = 0; i < nNeighbors; ++i) {
-      if(!visited[neighbors[i]->l][neighbors[i]->c] && !isWall(theMap[neighbors[i]->l][neighbors[i]->c])) {
-	if(cond(theMap[neighbors[i]->l][neighbors[i]->c])) {
-	  return neighbors[i];
-	}
-	if(distanceSqr(start, *neighbors[i]) <= FIELD_DIAMETER*FIELD_DIAMETER) {
-	  visited[neighbors[i]->l][neighbors[i]->c] = true;
-	  queue[queueBack++] = neighbors[i];
-	}
-      }
-    }
-  }
-  return NULL;
-}
-
-bool BallCond::operator ()(Cell &c) {
-  return isBall(c);
-}
-
-bool UnvisitedCond::operator ()(Cell &c) {
-  return !c.visited;
-}
-
 void initialize() {
   Position p;
+  operationID = 0;
+  memset(visited, 0, sizeof(int)*WIDTH*HEIGHT);
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
       theMap[l][c].pWall = PRIOR_WALL;

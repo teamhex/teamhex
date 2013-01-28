@@ -21,5 +21,6 @@ extern "C" {
 
   void printCells();
 
+  int getConfigWall(int x, int y);
   int getWall(int x, int y);
 }

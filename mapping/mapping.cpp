@@ -105,10 +105,15 @@ void printCells() {
   printMap();
 }
 
+int getConfigWall(int x, int y) {
+  RealPosition realPos = {x,y};
+  Position gridPos = realToGrid(realPos);
+  return (int)configMap[gridPos.l][gridPos.c];
+}
+
 int getWall(int x, int y) {
   RealPosition realPos = {x,y};
   Position gridPos = realToGrid(realPos);
-  //return (int)configMap[gridPos.l][gridPos.c];
   return (int)isWall(theMap[gridPos.l][gridPos.c]);
 }
 

@@ -15,8 +15,8 @@ void wallExpand(int l, int c, int radius) {
   int nNeighbors;
   Position **neighbors;
 
-  memset(visited, false, HEIGHT*WIDTH*sizeof(bool));
-  visited[l][c] = true;
+  ++operationID;
+  visited[l][c] = operationID;
 
   queueFront = queueBack = 0;
   queue[queueBack++] = &start;;
@@ -30,8 +30,8 @@ void wallExpand(int l, int c, int radius) {
     configMap[cur->l][cur->c] = true;
 
     for(int i = 0; i < nNeighbors; ++i) {
-      if(!visited[neighbors[i]->l][neighbors[i]->c]) {
-	visited[neighbors[i]->l][neighbors[i]->c] = true;
+      if(visited[neighbors[i]->l][neighbors[i]->c] != operationID) {
+	visited[neighbors[i]->l][neighbors[i]->c] = operationID;
 	if(distanceSqr(start, *neighbors[i]) <= radius*radius) {
 	  queue[queueBack++] = neighbors[i];
 	}
@@ -45,11 +45,13 @@ void setConfigurationSpace() {
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
       if(isWall(theMap[l][c])) {
-	wallExpand(l,c,ROBOT_RADIUS);
+	wallExpand(l,c,ROBOT_RADIUS+configSLACK);
       }
     }
   }
 }
+
+#include <stdio.h>
 
 bool makePlan(Position &start, Position &goal) {
   Position **neighbors;
@@ -61,20 +63,22 @@ bool makePlan(Position &start, Position &goal) {
   planLength = 0;
   
   // Start or goal blocked
-  if(configMap[start.l][start.c] || configMap[goal.l][goal.c]) {
+  if(configMap[goal.l][goal.c]) {
+    printf("Should not happen\n");
     return false;
   }
-  memset(visited, false, HEIGHT*WIDTH*sizeof(bool));
+  ++operationID;
   cur = new Position();
   cur->l = start.l;
   cur->c = start.c;
 
   while(cur != NULL) {
+    visited[cur->l][cur->c] = operationID;
     minDist = -1;
     
     plan[planLength++] = cur;
-    visited[cur->l][cur->c] = true;
     if(cur->l == goal.l && cur->c == goal.c) {
+      printf("A plan exists ...\n");
       return true;
     }
     
@@ -85,13 +89,14 @@ bool makePlan(Position &start, Position &goal) {
 
     for(int i = 0; i < nNeighbors; ++i) {
       d = distanceSqr(goal, *neighbors[i]);
-      if(!visited[neighbors[i]->l][neighbors[i]->c] && (minDist == -1 || d < minDist)) {
-        d = minDist;
+      if((!configMap[neighbors[i]->l][neighbors[i]->c] || distanceSqr(start, *neighbors[i]) < SLACK*SLACK) &&
+	 visited[neighbors[i]->l][neighbors[i]->c] != operationID &&
+	 (minDist == -1 || d < minDist)) {
+        minDist = d;
 	cur = neighbors[i];
       }
     }
   }
-  delete cur;
   planLength = 0;
   return false;
 }
@@ -123,7 +128,7 @@ bool isLineClear(Position &start, Position &end) {
 }
 
 void smoothPlan() {
-  if(planLength < 2) {
+  if(planLength <= 2) {
     return;
   }
   Position *cur = plan[0];
@@ -136,4 +141,47 @@ void smoothPlan() {
   }
   plan[nextPointInd++] = plan[planLength-1];
   planLength = nextPointInd;
+}
+
+Position *findClosest(RealPosition &robotPos, Condition &cond) {  
+  int nNeighbors;
+  Position **neighbors;
+  Position *cur;
+
+  Position start = realToGrid(robotPos);
+
+  ++operationID;
+  visited[start.l][start.c] = operationID;
+
+  queueFront = queueBack = 0;
+  queue[queueBack++] = &start;
+
+  while(queueBack > queueFront) {
+    cur = queue[queueFront++];
+
+    nNeighbors = allnNeighbors[cur->l][cur->c];
+    neighbors = allNeighbors[cur->l][cur->c];
+
+    for(int i = 0; i < nNeighbors; ++i) {
+      if(visited[neighbors[i]->l][neighbors[i]->c] != operationID &&
+	 !configMap[neighbors[i]->l][neighbors[i]->c]) {
+	if(cond(theMap[neighbors[i]->l][neighbors[i]->c])) {
+	  return neighbors[i];
+	}
+	if(distanceSqr(start, *neighbors[i]) <= FIELD_DIAMETER*FIELD_DIAMETER) {
+	  visited[neighbors[i]->l][neighbors[i]->c] = operationID;
+	  queue[queueBack++] = neighbors[i];
+	}
+      }
+    }
+  }
+  return NULL;
+}
+
+bool BallCond::operator ()(Cell &c) {
+  return isBall(c);
+}
+
+bool UnvisitedCond::operator ()(Cell &c) {
+  return !c.visited;
 }

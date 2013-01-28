@@ -3,6 +3,24 @@
 
 #include "bayesianGrid.h"
 
+#define SLACK 0
+#define configSLACK 1
+
+class Condition {
+ public:
+  virtual bool operator ()(Cell &c) = 0;
+};
+
+class BallCond: public Condition {
+ public:
+  bool operator ()(Cell &c);
+};
+
+class UnvisitedCond: public Condition {
+ public:
+  bool operator ()(Cell &c);
+};
+
 extern bool configMap[HEIGHT][WIDTH];
 extern Position *plan[HEIGHT*WIDTH];
 extern int planLength;
@@ -12,5 +30,6 @@ void setConfigurationSpace();
 bool makePlan(Position &start, Position &goal);
 bool isLineClear(Position &start, Position &end);
 void smoothPlan();
+Position *findClosest(RealPosition &robotPos, Condition &cond);
 
 #endif

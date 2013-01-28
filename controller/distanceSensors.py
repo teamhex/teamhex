@@ -8,14 +8,14 @@ import math
 
 # To calibrate!
 sensorParams = [
-    (1677.11323903, -32.3694765169),
-    (1677.11323903, -32.3694765169),
-    (1677.11323903, -32.3694765169),
-    (1677.11323903, -32.3694765169),
-    (1677.11323903, -32.3694765169),]
+    ( 1794.78516772 , 35.6370381828 ),
+    ( 1721.79069881 , 42.4732470183 ),
+    ( 1767.11968919 , 25.1189710748 ),
+    ( 1779.69282231 , 38.6184904426 ),
+    ( 1765.14744502 , 16.9955147657 ),]
 
 # Maybe more?
-maxDistance = [16.,16.,16.,16.,16.]
+maxDistance = [30.,23.,30.,18.,20.]
 minDistance = [2.5,2.5,2.5,2.5,2.5]
 
 irVals = [0,0,0,0,0,0]
@@ -39,7 +39,7 @@ def update(rawVals, pose):
     irVals = [rawToInches(x) for x in zip(rawVals,sensorParams)]
     for i in xrange(5):
         output.append([0,0,True])
-        if (not minDistance[i] < irVals[i] < maxDistance[i]):
+        if not (minDistance[i] <= irVals[i] <= maxDistance[i]):
             irVals[i] = maxDistance[i]
             output[i][2] = False
         [xVal,yVal] = serialLinkTransform(pose,angArray[i],irVals[i]+4.0)

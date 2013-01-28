@@ -12,7 +12,8 @@ extern "C" {
 int nAreas = 0;
 PixelArea *areas[WIDTH*HEIGHT];
 int picture[HEIGHT][WIDTH];
-bool visited[HEIGHT][WIDTH];
+int operationID;
+int visited[HEIGHT][WIDTH];
 Position *queue[WIDTH*HEIGHT];
 int front,back;
 PixelArea *area;
@@ -100,7 +101,7 @@ void setNeighbors(Position &p) {
 }
 
 void setArea(Position *start, Matcher &matches) {
-  if(visited[start->l][start->c] || !matches(picture[start->l][start->c], picture[start->l][start->c])) {
+  if(visited[start->l][start->c] == operationID || !matches(picture[start->l][start->c], picture[start->l][start->c])) {
     delete start;
     area = NULL;
     return;
@@ -123,7 +124,7 @@ void setArea(Position *start, Matcher &matches) {
   
   front = back = 0;
   queue[back++] = start;
-  visited[start->l][start->c] = true;
+  visited[start->l][start->c] = operationID;
 
   while(back > front) {
     current = queue[front++];
@@ -138,7 +139,7 @@ void setArea(Position *start, Matcher &matches) {
     for(int i = 0; i < nNeighbors; ++i) {
       neigh = neighbors[i];
       
-      if(matches(picture[current->l][current->c], picture[neigh->l][neigh->c]) && !visited[neigh->l][neigh->c]) {
+      if(matches(picture[current->l][current->c], picture[neigh->l][neigh->c]) && visited[neigh->l][neigh->c] != operationID) {
 	// Bounding square
 	if(neigh->l < area->bottomRight.l) {
 	  area->bottomRight.l = neigh->l;
@@ -154,7 +155,7 @@ void setArea(Position *start, Matcher &matches) {
 	}
 
 	queue[back++] = neigh;
-	visited[neigh->l][neigh->c] = true;
+	visited[neigh->l][neigh->c] = operationID;
       }
     }
   }
@@ -170,6 +171,8 @@ void startNeighbors() {
       setNeighbors(p);
     }
   }
+  operationID = 0;
+  memset(visited, 0, sizeof(int)*WIDTH*HEIGHT);
 }
 
 void startHSL(int *rgb) {
@@ -181,7 +184,7 @@ void startHSL(int *rgb) {
 }
 
 void findObjectsInImage(Matcher &matches, Matcher &stopMatch) {
-  memset(visited, false, sizeof(bool)*WIDTH*HEIGHT);
+  ++operationID;
   area = NULL;
   // Clear previous areas
   for(int i = 0; i < nAreas; ++i) {

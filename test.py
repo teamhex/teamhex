@@ -5,20 +5,7 @@ dgonz@mit.edu
 January 2013
 """
 
-import signal
-import sys
-import math
-import ctypes
-import os
-import time
-
-import dgonzOLD.motorControl as mot
-import dgonzOLD.serialComm as ser
-import dgonzOLD.odo as odo
-import dgonzOLD.sensor as sensor
-import dgonzOLD.waypointNav as waypointNav
-import dgonzOLD.vision as vision
-import colorsys
+import simulator.control as ct
 
 import pygame
 from pygame.locals import *
@@ -39,62 +26,6 @@ class CPixelArea(ctypes.Structure):
                 ('centerC', (ctypes.c_int)),
                 ('size', (ctypes.c_int))]
 
-debug = True
-
-pose = [0,0,0]
-sensorPoints = [(0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False), (0,0,False)]
-
-def initialize():
-    ser.initialize()
-    waypointNav.initialize()
-
-def update(stop = False):
-    global pose,sensorPoints
-
-    #-------------------------Receive Data from Arduino
-    # data is [Left Encoder, Right Encoder]
-    data = ser.receiveData()
-    #print data
-    #-------------------------Update Odometry
-    pose = odo.update(data[0],data[1])
-    #print pose
-
-    #-------------------------Update Sensor Values
-
-    sensorPoints = sensor.update(data[2:7],pose)
-    #print sensorPoints
-    if waypointNav.state == waypointNav.TRANSLATING:
-        for i in sensorPoints[1:6]:
-            if ((pose[0]-i[0])**2 + (pose[1]-i[1])**2) < 9.0**2:
-                waypointNav.wp = []
-                waypointNav.addWaypoint([pose[0],pose[1],pose[2],False])
-    
-    #-------------------------Debug Print
-
-    [forSet,angSet] = waypointNav.update(pose)
-    if abs(forSet) > 3.5:
-        forSet = 3.5*abs(forSet)/forSet
-    if abs(angSet) > 3.5:
-        angSet = 3.5*abs(angSet)/angSet
-    #mot.setAngForVels(forSet,angSet)
-    mot.setAngForVels(2.0,0)
-    #print forSet,angSet
-    #print pose
-    #mot.setAngForVels(1,0)
-    #mot.setAngForVels(0,0)
-
-    [dThetaLdt,dThetaRdt] = odo.getVel()
-    [lCommand,rCommand] = mot.update(dThetaLdt,dThetaRdt)
-    #print lCommand,rCommand
-    if debug:
-        pass#print pose,sensorPoints
-        #print "x = "+str(pose[0])+", y = "+str(pose[1])+", theta = "+str(math.degrees(pose[2]))
-    if(stop):
-        ser.serCont.send('STOPS')
-    else:
-        s = mot.getMotorCommandBytes(lCommand,rCommand)
-        ser.sendCommand(s)
-
 def cleanQuit(signal, frame):
     print "Interrupt received"
     pygame.quit()
@@ -107,12 +38,7 @@ signal.signal(signal.SIGINT, cleanQuit)
 
 def goMap():
     global myMap
-    global myCam
     myMap.initMapping()
-    myCam.startCam('/dev/video1')
-    myCam.enableCam()
-    
-    initialize()
 
     realHeight,realWidth = 150,150
 
@@ -136,7 +62,7 @@ def goMap():
     i = 0
     start = time.time()
     while not q and time.time()-start < 60*3:
-        update()
+        update(stop=True)
         if len(waypointNav.wp) == 0:
             waypointNav.addWaypoints([[random.randrange(30,120), random.randrange(30,120), 0, False]])
         myCam.setPicture()
@@ -163,7 +89,9 @@ def goMap():
                 a = CPixelArea()
                 myCam.getArea(j,ctypes.byref(a))
                 x,y = vision.getBallCoords(a.centerC-xRes/2.0, yRes/2.0-a.centerL, pose)
-                print x,y, a.centerC, a.centerL
+                if(abs((125 - (a.pixel>>16))%360) <= 35):
+                    print x-75, math.atan((yRes/2.0-a.centerL)/((yRes/2.0)/math.tan(math.radians(90)/2.0)))
+                #print x,y, a.centerC, a.centerL
                 if(340 < (a.pixel>>16) or 20 > (a.pixel>>16)):
                     c = RED_COLOR
                 else:
@@ -183,7 +111,7 @@ def goMap():
             if not q:
                 pygame.display.update()
         i = 0
-        fpsClock.tick(5)
+        fpsClock.tick(10)
     cleanQuit('','')
 
 goMap()
