@@ -17,6 +17,11 @@ hues = [
     (255,10,PURPLE)
     ]
 
+ballHues = set([
+        GREEN,
+        RED
+        ])
+
 def hueDiff(ang1,ang2):
     return min((ang2-ang1)%360, (ang1-ang2)%360)
 
@@ -71,7 +76,14 @@ def calcX(px,y):
 def getBallCoords(area,pose):
     px = area.centerC-xRes/2.0
     py = yRes/2.0-area.centerL
-    ballRelY = calcY(py)
+
+    width = area.bottomRightC-area.topLeftL
+    # Formula from excel:
+    if 36 <= width <= 115:
+        ballRelY = 0.00225*width**2 - 0.50065*width + 32.708
+    else:
+        ballRelY = None
+    #ballRelY = calcY(py)
     if ballRelY is None:
         return None
     ballRelX = calcX(px, ballRelY)
@@ -136,3 +148,10 @@ def copyCPixelArea(originalArea):
 
 def getAreas():
     return [copyCPixelArea(a) for a in areas[:nAreas.value]]
+
+def isBall(area):
+    return (getHue(area) in ballHues)
+
+def getAreaAngle(area,pose):
+    theta = math.atan((xRes/2.0-area.centerC)/focalX)
+    return pose[2]+theta
