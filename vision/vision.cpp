@@ -97,11 +97,15 @@ void setPicture() {
   pthread_mutex_unlock(&pictureLock);
 }
 
+int i = 0;
+char str[20];
+
 void getInfo() {
   //blur(rgbPictureMeh);
   startHSL(rgbPictureMeh);
   findObjectsInImage(LOOKER,BLUE_WALLS);
-  saveRGB(rgbPictureMeh, "tmp/snap");
+  sprintf(str, "tmp/snap%d", i++);
+  saveRGB(rgbPictureMeh, str);
 }
 
 int getNAreas() {
@@ -111,8 +115,12 @@ int getNAreas() {
 void getArea(int i, struct CPixelArea *res) {
   if(i >= 0 && i < nAreas) {
     res->pixel = areas[i]->startPixel;
-    res->centerL = areas[i]->center.l;
-    res->centerC = areas[i]->center.c;
+    res->topLeftL = areas[i]->topLeft.l;
+    res->topLeftC = areas[i]->topLeft.c;
+    res->bottomRightL = areas[i]->bottomRight.l;
+    res->bottomRightC = areas[i]->bottomRight.c;
+    res->centerL = (areas[i]->topLeft.l+areas[i]->bottomRight.l)/2.0;
+    res->centerC = (areas[i]->topLeft.c+areas[i]->bottomRight.c)/2.0;
     res->size = areas[i]->size;
   }
   else {

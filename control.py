@@ -1,46 +1,20 @@
 import os
-from superserial import *
-import time
+import controller.control as ct
+import vision.vision as v
 
-robot = Serial(baudrate=1000000)
-robot.connect(port="/dev/arduino_control")
-
-
-def limitCommand(var,minVal, maxVal):
-    if var>maxVal:
-        var = maxVal
-    elif var<minVal:
-        var = minVal
-    return var
-    
-def motCmdBytes(x):
-    #Converts an input into two bytes to be sent to the Arduino
-    #input commands can be from [-255 : 255]
-    x = limitCommand(int(x),-255,255)
-    if x>=0:
-        return chr(0)+chr(x)
-    elif x<0:
-        return chr(abs(x))+chr(0)
-
-def commandMotors(lPWM,rPWM):
-    #send a command to motors. Commands can range from -255 to 255
-    sendIt = motCmdBytes(lPWM)+motCmdBytes(rPWM)
-    robot.send(sendIt)
-
-
-ZERO = 0
 def goForward():
-    commandMotors(70,70)
+    ct.setBasicControl(forward = 3.5)
 def goBack():
-    commandMotors(-70,-70)
+    ct.setBasicControl(forward = -3.5)
 def stop():
-    commandMotors(0,0)
+    ct.setBasicControl()
 def turnLeft():
-    commandMotors(-50,50)
+    ct.setBasicControl(angular=3.5)
 def turnRight():
-    commandMotors(50,-50)
+    ct.setBasicControl(angular=-3.5)
 def disconnect():
-    robot.stop()
+    ct.stop()
+    v.stop()
 
 actions = {
     'f': goForward,
@@ -49,6 +23,8 @@ actions = {
     'l': turnLeft,
     'r': turnRight,
     }
+ct.initialize()
+v.initialize('/dev/video1')
 while True:
     a = raw_input()
     if a in actions:

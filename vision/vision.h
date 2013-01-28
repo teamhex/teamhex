@@ -9,6 +9,8 @@ extern "C" {
   struct CPixelArea {
     int pixel;
     int centerL,centerC;
+    int topLeftL,topLeftC;
+    int bottomRightL,bottomRightC;
     int size;
   };
 
