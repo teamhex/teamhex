@@ -28,10 +28,10 @@
 #define isBall(C) ((C).pBall > BALL_THRESHOLD)
 #define isValid(P) (((P).l >= 0 && (P).l < HEIGHT) && ((P).c >= 0 && (P).c < WIDTH))
 
-#define WIDTH 150
-#define HEIGHT 150
-#define REAL_WIDTH 450.0
-#define REAL_HEIGHT 450.0
+#define WIDTH 300
+#define HEIGHT 300
+#define REAL_WIDTH 900.0
+#define REAL_HEIGHT 900.0
 #define CELL_WIDTH ((double)REAL_WIDTH/(double)WIDTH)
 #define CELL_HEIGHT ((double)REAL_HEIGHT/(double)HEIGHT)
 

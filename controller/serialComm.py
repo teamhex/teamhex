@@ -12,6 +12,7 @@ def initialize(contPort = '/dev/arduino_encoders', contBaud = 1000000):
     global serCont
     serCont = serial.Serial(baudrate=contBaud)
     serCont.connect(port=contPort)
+    serCont.receive()
     print "connected!"
 
 def terminate():

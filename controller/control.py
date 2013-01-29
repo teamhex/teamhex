@@ -49,8 +49,8 @@ sharedArray = mp.Array('d',[0]*8)
 stopCommand = mp.Value('i',0)
 
 # Map specs (important to put the robot in the middle)
-realWidth = 450
-realHeight = 450
+realWidth = 900
+realHeight = 900
 
 inWait = mp.Value('i',1)
 forMove = mp.Value('i',0)
@@ -62,6 +62,7 @@ def initialize():
     wpNav.initialize()
     wf.initialize()
     odo.initialize(realWidth/2.0, realHeight/2.0)
+    pose = [realWidth/2.0, realHeight/2.0, 0.]
     
     wpNav.clearWaypoints()
     wpNav.deactivate()
@@ -143,7 +144,7 @@ def update(stop = False):
     if debug:
         print data,pose,sensorData,forSet,angSet,'\n'
 
-def controlLoop(freq=50):
+def controlLoop(freq=200):
     global pose,sensorData,stopCommand,sharedArray
     while stopCommand.value == 0:
         start = time.time()
