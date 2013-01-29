@@ -50,13 +50,13 @@ def goMapping(freq=30):
         sensorPoints = ct.getSensorPoints()
         pose = ct.getPose()
 
-        areas = [v.getBallCoords(a) for a in v.getAreas() if v.getBallCoords(a,pose) is not None]
-
+        areas = [a for a in v.getAreas() if v.getBallCoords(a,pose) is not None]
         # Mapping update
         myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
         for a in areas:
             if v.isBall(a):
-                myMap.ballDetected(ctypes.c_double(a[0]),ctypes.c_double(a[1]),ctypes.c_int(RED_BALL))
+                coords = v.getBallCoords(a,pose)
+                myMap.ballDetected(ctypes.c_double(coords[0]),ctypes.c_double(coords[1]),ctypes.c_int(RED_BALL))
         for s in sensorPoints:
             if(s[2]):
                 myMap.wallDetected(ctypes.c_double(s[0]), ctypes.c_double(s[1]))
@@ -86,14 +86,14 @@ def goPygame():
     fieldMap = pygame.transform.scale(
         pygame.image.load("simulator/map.bmp"),
         (width,height))
-    #main_surface.fill(WHITE_COLOR)
-    main_surface.blit(fieldMap, (0,0))
+    main_surface.fill(WHITE_COLOR)
+    #main_surface.blit(fieldMap, (0,0))
 
     while not q:
         pose = ct.getPose()
         sensorPoints = ct.getSensorPoints()
-        main_surface.blit(fieldMap, (0,0))
-        #main_surface.fill(WHITE_COLOR)
+        #main_surface.blit(fieldMap, (0,0))
+        main_surface.fill(WHITE_COLOR)
 
         balls = [v.getBallCoords(a,pose) for a in v.getAreas() if v.getBallCoords(a,pose) is not None]
         for b in balls:
@@ -135,6 +135,7 @@ def goSim(freq=10.0):
     
     ct.initialize()
     v.initialize()
+    time.sleep(2.0)
     mapThread.start()
     pygameThread.start()
 
@@ -148,7 +149,7 @@ def goSim(freq=10.0):
     while not q:
         start = time.time()
         pose = ct.getPose()
-        balls = [x for x in v.getAreas(pose) if v.isBall(x)]
+        balls = [x for x in v.getAreas() if v.isBall(x)]
         knownBalls = []
         for b in balls:
             bc = v.getBallCoords(b,pose)

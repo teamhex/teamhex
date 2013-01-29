@@ -77,7 +77,7 @@ def getBallCoords(area,pose):
     px = area.centerC-xRes/2.0
     py = yRes/2.0-area.centerL
 
-    width = area.bottomRightC-area.topLeftL
+    width = area.topLeftC-area.bottomRightC
     # Formula from excel:
     if 36 <= width <= 115:
         ballRelY = 0.00225*width**2 - 0.50065*width + 32.708
@@ -153,5 +153,5 @@ def isBall(area):
     return (getHue(area) in ballHues)
 
 def getAreaAngle(area,pose):
-    theta = math.atan((xRes/2.0-area.centerC)/focalX)
-    return pose[2]+theta
+    theta = math.atan((area.centerC-xRes/2.0)/focalX)
+    return (pose[2]-theta)%(2*math.pi)

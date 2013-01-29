@@ -16,8 +16,8 @@ import multiprocessing as mp
 import math
 import time
 
-MAX_FOR_SPEED = 6.0
-MAX_ANG_SPEED = 6.0
+MAX_FOR_SPEED = 3.0
+MAX_ANG_SPEED = 3.0
 debug = False
 
 WAYPOINT = 0
@@ -94,7 +94,7 @@ def update(stop = False):
     sp = getSensorPoints()
 
     for s in sp[1:4]:
-        if distance(pose,s) < ROBOT_RADIUS:
+        if distance(pose,s) < ROBOT_RADIUS+0.5:
             if(wpNav.state == wpNav.TRANSLATING):
                 clearWayPoints()
             basicFor.value = 0.0

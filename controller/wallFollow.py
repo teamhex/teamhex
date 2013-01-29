@@ -13,7 +13,7 @@ from PIDControlModule import PIDController
 import waypointNav as wpNav
 import distanceSensors as sen
 
-desiredDist = 12.0
+desiredDist = 10.0
 
 FIND=0
 ORIENT=1
