@@ -2,11 +2,12 @@
 #include "motionPlanner.h"
 #include <string.h>
 
-bool configMap[HEIGHT][WIDTH];
+int configMap[HEIGHT][WIDTH];
 Position *plan[HEIGHT*WIDTH];
 int planLength;
 
 void wallExpand(int l, int c, int radius) {
+  double dist;
   Position start;
   Position *cur;
   start.l = l;
@@ -27,12 +28,19 @@ void wallExpand(int l, int c, int radius) {
     nNeighbors = allnNeighbors[cur->l][cur->c];
     neighbors= allNeighbors[cur->l][cur->c];
 
-    configMap[cur->l][cur->c] = true;
+    dist = distanceSqr(start,*cur);
+
+    if(dist <= (radius+smoothSLACK)*(radius+smoothSLACK)) {
+      configMap[cur->l][cur->c] = 2;
+    }
+    else if(dist <= (radius+planSLACK)*(radius+planSLACK)) {
+      configMap[cur->l][cur->c] = 1;
+    }
 
     for(int i = 0; i < nNeighbors; ++i) {
       if(visited[neighbors[i]->l][neighbors[i]->c] != operationID) {
 	visited[neighbors[i]->l][neighbors[i]->c] = operationID;
-	if(distanceSqr(start, *neighbors[i]) <= radius*radius) {
+	if(distanceSqr(start, *neighbors[i]) <= (radius+planSLACK)*(radius+planSLACK)) {
 	  queue[queueBack++] = neighbors[i];
 	}
       }
@@ -41,11 +49,11 @@ void wallExpand(int l, int c, int radius) {
 }
 
 void setConfigurationSpace() {
-  memset(configMap, false, sizeof(bool)*HEIGHT*WIDTH);
+  memset(configMap, 0, sizeof(int)*HEIGHT*WIDTH);
   for(int l = 0; l < HEIGHT; ++l) {
     for(int c = 0; c < WIDTH; ++c) {
       if(isWall(theMap[l][c])) {
-	wallExpand(l,c,ROBOT_RADIUS+configSLACK);
+	wallExpand(l,c,ROBOT_RADIUS);
       }
     }
   }
@@ -63,7 +71,7 @@ bool makePlan(Position &start, Position &goal) {
   planLength = 0;
   
   // Start or goal blocked
-  if(configMap[goal.l][goal.c]) {
+  if(configMap[start.l][start.c] || configMap[goal.l][goal.c]) {
     printf("Should not happen\n");
     return false;
   }
@@ -89,7 +97,7 @@ bool makePlan(Position &start, Position &goal) {
 
     for(int i = 0; i < nNeighbors; ++i) {
       d = distanceSqr(goal, *neighbors[i]);
-      if((!configMap[neighbors[i]->l][neighbors[i]->c] || distanceSqr(start, *neighbors[i]) < SLACK*SLACK) &&
+      if((!configMap[neighbors[i]->l][neighbors[i]->c]) &&
 	 visited[neighbors[i]->l][neighbors[i]->c] != operationID &&
 	 (minDist == -1 || d < minDist)) {
         minDist = d;
@@ -108,7 +116,7 @@ bool isLineClear(Position &start, Position &end) {
   double minDist = distanceSqr(start, end),d;
 
   do {
-    if(configMap[cur->l][cur->c]) {
+    if(configMap[cur->l][cur->c] >= 2) {
       return false;
     }
     neighbors = allNeighbors[cur->l][cur->c];

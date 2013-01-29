@@ -93,7 +93,7 @@ def update(stop = False):
     sp = getSensorPoints()
 
     for s in sp[1:4]:
-        if distance(pose,s) < ROBOT_RADIUS:
+        if distance(pose,s) < ROBOT_RADIUS+3:
             if(wpNav.state == wpNav.TRANSLATING):
                 clearWayPoints()
             basicFor.value = 0.0
@@ -132,7 +132,7 @@ def update(stop = False):
     if debug:
         print data,pose,sensorData,forSet,angSet,'\n'
 
-def controlLoop(freq=50):
+def controlLoop(freq=200):
     global pose,sensorData,stopCommand,sharedArray
     while stopCommand.value == 0:
         start = time.time()

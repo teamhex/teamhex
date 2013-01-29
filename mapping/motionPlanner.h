@@ -3,8 +3,8 @@
 
 #include "bayesianGrid.h"
 
-#define SLACK 0
-#define configSLACK 1
+#define smoothSLACK 4
+#define planSLACK 5
 
 class Condition {
  public:
@@ -21,7 +21,7 @@ class UnvisitedCond: public Condition {
   bool operator ()(Cell &c);
 };
 
-extern bool configMap[HEIGHT][WIDTH];
+extern int configMap[HEIGHT][WIDTH];
 extern Position *plan[HEIGHT*WIDTH];
 extern int planLength;
 

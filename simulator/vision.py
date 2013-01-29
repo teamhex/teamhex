@@ -11,9 +11,11 @@ detectMin,detectMax = 9.0,16.0
 ROBOT_RADIUS = 7.0
 
 BALL_COLOR = (255,0,0)
+SCORE_COLOR = (0,255,0)
 
 colors = set([
-        BALL_COLOR
+        BALL_COLOR,
+        SCORE_COLOR
         ])
 
 class CPixelArea(ctypes.Structure):
@@ -122,7 +124,12 @@ def getAreaAngle(area,pose):
     return math.atan2(area[1]-pose[1], area[0]-pose[0])
 
 def isBall(area):
-    return True
+    global fieldMap,BALL_COLOR
+    return fieldMap.get_at((int(area[0]),449-int(area[1])))[:3] == BALL_COLOR
+
+def isScoringWall(area):
+    global fieldMap,SCORE_COLOR
+    return fieldMap.get_at((int(area[0]),449-int(area[1])))[:3] == SCORE_COLOR
 
 def getBallCoords(area,pose):
     if detectMin <= distance(area,pose) <= detectMax:

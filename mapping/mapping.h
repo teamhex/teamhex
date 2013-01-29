@@ -23,4 +23,7 @@ extern "C" {
 
   int getConfigWall(int x, int y);
   int getWall(int x, int y);
+  int getWallType(int x, int y);
+
+  int getBall(int x, int y);
 }

@@ -117,6 +117,23 @@ int getWall(int x, int y) {
   return (int)isWall(theMap[gridPos.l][gridPos.c]);
 }
 
+int getWallType(int x, int y) {
+  RealPosition realPos = {x,y};
+  Position gridPos = realToGrid(realPos);
+  if(!isWall(theMap[gridPos.l][gridPos.c])) {
+    return -1;
+  }
+  else {
+    return theMap[gridPos.l][gridPos.c].wallType;
+  }
+}
+
+int getBall(int x, int y) {
+  RealPosition realPos = {x,y};
+  Position gridPos = realToGrid(realPos);
+  return (int)isBall(theMap[gridPos.l][gridPos.c]);
+}
+
 // int main() {
 //   char command;
 //   RealPosition robotPos, hitPos;
