@@ -16,9 +16,11 @@ extern "C" {
 #include "vision.h"
 
 struct cam c;
-int rgbPicture[WIDTH*HEIGHT];
+int rgbBuffers[2][WIDTH*HEIGHT];
+int currentBuffer;
+int *rgbPicture;
+int *rgbPictureMeh;
 int rgbPictureTemp[WIDTH*HEIGHT];
-int rgbPictureMeh[WIDTH*HEIGHT];
 
 pthread_t captureThread;
 pthread_mutex_t pictureLock = PTHREAD_MUTEX_INITIALIZER;
@@ -53,6 +55,9 @@ void *continuousCapture(void *ptr) {
 void enableCam() {
   enableCapture(&c);
   // Continuously capture until stopCam() is called.
+  currentBuffer = 0;
+  rgbPicture = rgbBuffers[0];
+  rgbPictureMeh = rgbBuffers[1];
   pthread_create(&captureThread, NULL, continuousCapture, NULL);
 }
 
@@ -85,7 +90,7 @@ void setFilePicture(char *filename) {
 
 void setPicture() {
   // Wait for new picture!
-  newPicture = true;
+  //newPicture = true;
   if(!newPicture) {
     pthread_mutex_lock(&newPictureLock);
     pthread_cond_wait(&newPictureCond, &newPictureLock);
@@ -93,7 +98,10 @@ void setPicture() {
     pthread_mutex_unlock(&newPictureLock);
   }
   pthread_mutex_lock(&pictureLock);
-  memcpy(rgbPictureMeh, rgbPicture, sizeof(int)*WIDTH*HEIGHT);
+  //memcpy(rgbPictureMeh, rgbPicture, WIDTH*HEIGHT*sizeof(int));
+  rgbPictureMeh = rgbBuffers[currentBuffer];
+  currentBuffer = (currentBuffer+1)&1;
+  rgbPicture = rgbBuffers[currentBuffer];
   pthread_mutex_unlock(&pictureLock);
 }
 
