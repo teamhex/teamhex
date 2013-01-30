@@ -113,7 +113,7 @@ void getInfo() {
   startHSL(rgbPictureMeh);
   findObjectsInImage(LOOKER,BLUE_WALLS);
   sprintf(str, "tmp/snap%d", i++);
-  saveRGB(rgbPictureMeh, str);
+  //saveRGB(rgbPictureMeh, str);
 }
 
 int getNAreas() {
