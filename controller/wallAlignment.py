@@ -7,12 +7,12 @@ January 2013
 import PIDControlModule as pid
 import math
 
-alignTroller = pid.PIDController(.1,.001,0.01)
+alignTroller = pid.PIDController(1,.001,0.01)
 
 done = True
 
 def reset():
-    global alignTroller
+    global alignTroller,done
     alignTroller.setDesired(0,True)
     done = False
     return

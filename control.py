@@ -305,8 +305,8 @@ def pickUpBall(area, freq = 10.0):
     
 def ballGo(freq=10.0):
     pose = ct.getPose()
-    balls = [x for x in v.getAreas() if v.isBall(x)]
-    knownBalls = [x for x in balls if v.getBallCoords(x,pose) is not None]
+    balls = getBalls()
+    knownBalls = getKnownBalls(balls)
     if len(knownBalls) > 0:
         print "Picking up ball :)"
         ct.clearWayPoints()
@@ -314,11 +314,16 @@ def ballGo(freq=10.0):
         ct.addWayPoints([v.getBallCoords(x,pose) + [0,False] for x in knownBalls])
     elif len(balls) > 0:
         print "Going to ball :P"
+        # Find largest size ball
+        b = balls[0]
+        for bPrime in balls[1:]:
+            if bPrime.size > b.size:
+                b = bPrime
         goTowardsArea(balls[0])
         while not ct.waitingForCommand():
             startTime = time.time()
             pose = ct.getPose()
-            knownBalls = [x for x in v.getAreas() if v.isBall(x) and v.getBallCoords(x,pose) is not None]
+            knownBalls = getKnownBalls(getBalls)
             if len(knownBalls) > 0:
                 print "Picking up ball :)"
                 ct.clearWayPoints()
@@ -331,11 +336,20 @@ def ballGoAndRotate(freq=10.0):
     ballGo()
     while not ct.waitingForCommand():
         time.sleep(1.0/freq)
-    initial = ct.getPose[2]
+    initial = ct.getPose()[2]
     prev = 0
     ct.setBasicControl(angular=3.0)
     while (ct.getPose()[2]-initial)%(2*math.pi) < prev:
-        time.sleep(1.0/freq)
+        startTime = time.time()
+        if len(getBalls()) > 0:
+            ballGo()
+            while not ct.waitingForCommand():
+                time.sleep(1.0/freq)
+            inital = ct.getPose()[2]
+            ct.setBasicControl(angular=2.0)
+        prev = (ct.getPose()[2]-initial)%(2*math.pi)
+        time.sleep(max(0,1.0/freq-(time.time()-startTime)))
+    ct.setBasicControl()
 
 def score(nBalls=5):
     ct.changeRamp()
@@ -348,5 +362,12 @@ def score(nBalls=5):
 def getBalls():
     return [x for x in v.getAreas() if v.isBall(x)]
 
-def getKnownBalls():
-    for 
+def getKnownBalls(balls):
+    pose = ct.getPose()
+    knownBalls = []
+    for b in balls:
+        if v.getBallCoords(b,pose) is not None:
+            knownBalls.append(b)
+    return knownBalls
+
+#def getWalls()

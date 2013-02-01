@@ -11,6 +11,7 @@ import odo as odo
 import distanceSensors as sen
 import waypointNav as wpNav
 import wallFollow as wf
+import wallAlignment as wa
 
 import multiprocessing as mp
 import math
@@ -23,6 +24,7 @@ debug = False
 WAYPOINT = 0
 BASIC = 1
 WALL_FOLLOW = 2
+WALL_ALIGN = 3
 CONTROLLER = mp.Value('i', WALL_FOLLOW)
 
 basicFor = mp.Value('d', 0.0)
@@ -38,6 +40,7 @@ FOLLOW_START = 3
 RAMP_CHANGE = 4
 SHOOTER_CHANGE = 5
 ADD_WPS = 6
+ALIGN_RESET = 7
 
 wpQueue = mp.Queue()
 
@@ -70,7 +73,8 @@ def initialize():
     
     wpNav.clearWaypoints()
     wpNav.deactivate()
-    CONTROLLER.value = WAYPOINT
+    wa.reset()
+    CONTROLLER.value = BASIC
     basicFor.value = basicAng.value = 0.0
     stopCommand.value = 0
     inWait.value = 1
@@ -121,6 +125,12 @@ def update(stop = False):
         [forSet,angSet] = basicFor.value,basicAng.value
     elif(CONTROLLER.value == WALL_FOLLOW):
         [forSet,angSet] = wf.update(sp,pose)
+    elif(CONTROLLER.value == WALL_ALIGN):
+        [forSet,angSet] = wa.update([distance(pose,s) for s in sp])
+        if wa.isDone():
+            inWait.value = 1
+        else:
+            inWait.value = 0
 
     if forSet == 0:
         forMove.value = 0
@@ -171,6 +181,8 @@ def controlLoop(freq=100):
             elif(com == ADD_WPS):
                 while not wpQueue.empty():
                     wpNav.addWaypoints(wpQueue.get())
+            elif(com == ALIGN_RESET):
+                wa.reset()
                 
         update()
         sharedArray[:] = [pose[0],pose[1],pose[2]] + sensorData
@@ -235,6 +247,10 @@ def changeRamp():
 
 def changeShooter():
     commandQueue.put(SHOOTER_CHANGE)
+
+def setWallAlignmentControl():
+    CONTROLLER.value = WALL_ALIGN
+    commandQueue.put(ALIGN_RESET)
 
 def test():
     initialize()
