@@ -70,7 +70,7 @@ def update(sensorPoints,pose):
             print "Lost wall, trying to find it again."
             timeoutStart = time.time()
             state = LOST_TIMEOUT
-            return [6.0,-2.0]
+            return [5.0,-2.0]
         elif not sp[-2][2]:
             dist = distance(sp[-1],pose)
         elif not sp[-1][2]:
@@ -80,7 +80,7 @@ def update(sensorPoints,pose):
             bx,by = pose[0]-sp[-1][0],pose[1]-sp[-1][1]
             x = distance(pose,sp[-1])
             dist = x*math.sqrt(1- (ax*bx + ay*by)/(distance(sp[-1],sp[-2])*x))
-        return [6.0,distAngTroller.update(dist)]
+        return [5.0,distAngTroller.update(dist)]
     elif state == LOST_TIMEOUT:
         if sensorPoints[-1][2] or sensorPoints[-2][2]:
             print "Found wall again, back to following it."
@@ -89,7 +89,7 @@ def update(sensorPoints,pose):
             return [0,0]
         elif (time.time()-timeoutStart) > lostTimeout:
             state=FIND
-        return [6.0,-2.0]
+        return [5.0,-2.0]
 
 
 def reset():

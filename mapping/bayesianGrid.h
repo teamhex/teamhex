@@ -9,8 +9,6 @@
 #define PRIOR_BALL 0.2
 #define PRIOR_WALL 0.3
 
-#define MAX_PROB 0.99
-
 #define NORMAL_WALL 0
 #define YELLOW_WALL 1
 #define PURPLE_WALL 2
@@ -30,8 +28,8 @@
 
 #define WIDTH 300
 #define HEIGHT 300
-#define REAL_WIDTH 900.0
-#define REAL_HEIGHT 900.0
+#define REAL_WIDTH 450.0
+#define REAL_HEIGHT 450.0
 #define CELL_WIDTH ((double)REAL_WIDTH/(double)WIDTH)
 #define CELL_HEIGHT ((double)REAL_HEIGHT/(double)HEIGHT)
 
@@ -87,10 +85,6 @@ void initialize();
 
 void printMap();
 
-extern Position *queue[HEIGHT*WIDTH];
-extern int queueFront, queueBack;
-extern int operationID;
-extern int visited[HEIGHT][WIDTH];
 extern Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 extern int allnNeighbors[HEIGHT][WIDTH];
 

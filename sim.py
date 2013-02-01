@@ -33,13 +33,19 @@ PURPLE_WALL = 2
 BLACK_WALL = 3
 
 def cleanQuit(signal, frame):
+    global mapThread,pygameThread,q
     print "Interrupt received"
     q = True
+    print recordedBalls
+    mapThread.join()
+    pygameThread.join()
     pygame.quit()
     ct.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)
+
+recordedBalls = set([])
 
 def goMapping(freq=30):
     global myMap,q
@@ -54,7 +60,7 @@ def goMapping(freq=30):
         sensorPoints = ct.getSensorPoints()
         pose = ct.getPose()
 
-        balls = [x for x in v.getAreas(pose)if v.isBall(x)]
+        balls = [x for x in v.getAreas(pose) if v.isBall(x)]
         knownBalls = []
         for b in balls:
             bc = v.getBallCoords(b,pose)
@@ -73,7 +79,7 @@ def goMapping(freq=30):
         time.sleep(max(0,1.0/float(freq) - (time.time()-start)))
 
 def goPygame():
-    global myMap,q
+    global myMap,q,recordedBalls
     pygame.init()
 
     # Parameters
@@ -138,7 +144,7 @@ def goPygame():
             pygame.display.update()
         fpsClock.tick(50)
 
-def goSim(freq=10.0):
+def goSim(freq=50.0):
     global myMap,q,mapThread,pygameThread
     q = False
 
@@ -160,7 +166,9 @@ def goSim(freq=10.0):
     state = FOLLOW
     ct.setWallFollowControl()
 
-    while not q:
+    startTime = time.time()
+
+    while not q and ((time.time()-startTime) <= 3*60):
         start = time.time()
         pose = ct.getPose()
         myMap.setConfigSpace()

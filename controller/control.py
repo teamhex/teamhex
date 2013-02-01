@@ -35,6 +35,10 @@ ACTIVATE = 0
 DEACTIVATE = 1
 CLEAR = 2
 FOLLOW_START = 3
+RAMP_CHANGE = 4
+SHOOTER_CHANGE = 5
+ADD_WPS = 6
+
 wpQueue = mp.Queue()
 
 pose = [0,0,0]
@@ -49,8 +53,8 @@ sharedArray = mp.Array('d',[0]*8)
 stopCommand = mp.Value('i',0)
 
 # Map specs (important to put the robot in the middle)
-realWidth = 900
-realHeight = 900
+realWidth = 450
+realHeight = 450
 
 inWait = mp.Value('i',1)
 forMove = mp.Value('i',0)
@@ -95,7 +99,7 @@ def update(stop = False):
     sp = getSensorPoints()
 
     for s in sp[1:4]:
-        if distance(pose,s) < ROBOT_RADIUS+0.5:
+        if distance(pose,s) < ROBOT_RADIUS+3:
             if(wpNav.state == wpNav.TRANSLATING):
                 clearWayPoints()
             basicFor.value = 0.0
@@ -142,14 +146,12 @@ def update(stop = False):
 
     #-------------------------Debug Print
     if debug:
-        print data,pose,sensorData,forSet,angSet,'\n'
+        print data,pose,sensorData,forSet,angSet,lCommand,rCommand
 
-def controlLoop(freq=200):
+def controlLoop(freq=100):
     global pose,sensorData,stopCommand,sharedArray
     while stopCommand.value == 0:
         start = time.time()
-        while not wpQueue.empty():
-            wpNav.addWaypoints(wpQueue.get())
         while not commandQueue.empty():
             com = commandQueue.get()
             if(com == ACTIVATE):
@@ -160,6 +162,16 @@ def controlLoop(freq=200):
                 wpNav.clearWaypoints()
             elif(com == FOLLOW_START):
                 wf.reset()
+            elif(com == RAMP_CHANGE):
+                ser.receiveData()
+                ser.serCont.send('RAMPCH')
+            elif(com == SHOOTER_CHANGE):
+                ser.receiveData()
+                ser.serCont.send('SHOOTER')
+            elif(com == ADD_WPS):
+                while not wpQueue.empty():
+                    wpNav.addWaypoints(wpQueue.get())
+                
         update()
         sharedArray[:] = [pose[0],pose[1],pose[2]] + sensorData
         time.sleep(max(0,1/float(freq) - (time.time()-start)))
@@ -200,6 +212,7 @@ def setWallFollowControl():
 
 def addWayPoints(wps):
     inWait.value = 0
+    commandQueue.put(ADD_WPS)
     wpQueue.put(wps)
 
 def clearWayPoints():
@@ -215,6 +228,13 @@ def waitingForCommand():
 
 def movingForward():
     return forMove.value != 0
+
+# Scoring mechanisms
+def changeRamp():
+    commandQueue.put(RAMP_CHANGE)
+
+def changeShooter():
+    commandQueue.put(SHOOTER_CHANGE)
 
 def test():
     initialize()

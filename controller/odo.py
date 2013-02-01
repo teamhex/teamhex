@@ -13,7 +13,7 @@ diff = 1000
 thetaL = 0
 thetaR = 0
 dThetaL = 0
-dThetaR = 0
+ndThetaR = 0
 dThetaLdt = 0
 dThetaRdt = 0
 x = 75
@@ -21,9 +21,9 @@ y = 75
 theta = 0
 pose = [x,y,theta]
 
-b = 5.89# between 6.15 and 6.2 #6.125 #Wheel Base (measured from wheel to center point) [inches]
-rWheel = 3.90625/2.0 #Wheel radius [inches]
-cpr = 200.0 #[Encoder counts per revolution]
+b = 5.88# between 6.15 and 6.2 #6.125 #Wheel Base (measured from wheel to center point) [inches]
+rWheel = 3.85/2.0 #Wheel radius [inches]
+cpr = 50.0 #[Encoder counts per revolution]
 kG = 13.5#Gear Ratio
 
 #Previous timestep encoder values

@@ -25,6 +25,7 @@ extern int configMap[HEIGHT][WIDTH];
 extern Position *plan[HEIGHT*WIDTH];
 extern int planLength;
 
+void startPlanning();
 void wallExpand(int l, int c, int radius);
 void setConfigurationSpace();
 bool makePlan(Position &start, Position &goal);

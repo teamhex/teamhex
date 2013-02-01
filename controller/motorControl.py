@@ -72,7 +72,7 @@ def setAngVel(x):
 def motCmdBytes(x):
     #Converts an input into two bytes to be sent to the Arduino
     #input commands can be from [-255 : 255]
-    x = limitCommand(int(x),-255,255)
+    x = limitCommand(int(x),-180,180)
     if x>=0:
         return chr(0)+chr(x)
     elif x<0:
