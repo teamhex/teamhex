@@ -56,8 +56,8 @@ sharedArray = mp.Array('d',[0]*8)
 stopCommand = mp.Value('i',0)
 
 # Map specs (important to put the robot in the middle)
-realWidth = 900
-realHeight = 900
+realWidth = 450
+realHeight = 450
 
 inWait = mp.Value('i',1)
 forMove = mp.Value('i',0)

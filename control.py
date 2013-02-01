@@ -63,19 +63,23 @@ def goMapping(freq=30):
 
         balls = getBalls()
         knownBalls = [v.getBallCoords(b,pose) for b in getKnownBalls(balls)]
-        specialWallPoints = [getPoint(pose,v.getAreaAngle(a),640) for a in getWalls()]
+        specialWallPoints = [getPoint(pose,v.getAreaAngle(a,pose),640) for a in getWalls()]
 
         # Mapping update
         myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
+
         for a in knownBalls:
             myMap.ballDetected(ctypes.c_double(a[0]),ctypes.c_double(a[1]),ctypes.c_int(RED_BALL))
+
         for wp in specialWallPoints:
             myMap.specialWall(ctypes.c_double(wp[0]),ctypes.c_double(wp[1]),ctypes.c_int(YELLOW_WALL))
+
         for s in sensorPoints:
             if(s[2]):
                 myMap.wallDetected(ctypes.c_double(s[0]), ctypes.c_double(s[1]))
             else:
                 myMap.wallNotDetected(ctypes.c_double(s[0]), ctypes.c_double(s[1]))
+
         time.sleep(max(0,1.0/float(freq) - (time.time()-start)))
 
 # def goPygame():
@@ -355,11 +359,20 @@ def ballGoAndRotate(endTime,freq=10.0):
 def scoreGo(endTime, freq=10.0):
     pose = ct.getPose()
     walls = getWalls()
+    vsTroller = PIDController(1,.001,.001)
+    vsTroller.setDesired(0)
     if len(walls) > 0:
         print "Going to the wall :)"
-        goTowardsArea(walls[0])
-        while not ct.waitingForCommand() and (endTime > time.time()):
+        wall = walls[0]
+        while len([p for p in sp[1:4] if ct.distance(p,pose) < ct.ROBOT_RADIUS + 3.0]) == 0 and (endTime > time.time()):
+			walls = getWalls()
+			if len(walls) > 0:
+				wall = getWalls()[0]
+			error = wall.centerC - v.xRes/2.0
+			ct.setBasicControl(angular = vsTroller.update(error), forward = 3.0)
             time.sleep(1.0/freq)
+            pose = ct.getPose()
+            sp = ct.getSensorPoints()
         ct.setWallAlignmentControl()
         while not ct.waitingForCommand() and (endTime > time.time()):
             time.sleep(1.0/freq)
@@ -387,15 +400,23 @@ def score(nBalls=5):
     ct.changeRamp()
 
 def getBalls():
-    return [x for x in v.getAreas() if v.isBall(x)]
+    myMap.setConfigSpace()
+    balls = []
+    pose = ct.getPose()
+    for b in v.getAreas():
+        if v.isBall(b):
+            bc = v.getBallCoords(b,pose)
+            theta = v.getAreaAngle(b,pose)
+            if (bc is None and canDrive(pose,getPoint(pose,theta,16))) or (bc is not None and canDrive(pose,bc)):
+                balls.append(b)
+    return balls
 
 def getKnownBalls(balls):
-    myMap.setConfigSpace()
     pose = ct.getPose()
     knownBalls = []
     for b in balls:
         bc = v.getBallCoords(b,pose)
-        if bc is not None and canDrive(pose,bc):
+        if bc is not None:
             knownBalls.append(b)
     return knownBalls
 
@@ -407,3 +428,20 @@ def startMapping():
     q = False
     mapThread = threading.Thread(target=goMapping)
     mapThread.start()
+
+def main(freq = 100.0):
+    global nBalls
+    v.initialize()
+    ct.initialize()
+    startMapping()
+    
+    endTime = time.time()+3*60
+    while endTime > time.time():
+        startTime = time.time()
+        if len(getBalls()) > 0:
+            ballGoAndRotate(endTime)
+        elif len(getWalls()) > 0 and (nBalls >= 3 or (nBalls >= 1 and endTime-time.time() <= 30)):
+            scoreGo(endTime)
+        else:
+            ct.setWallFollowControl()
+        time.sleep(max(0,1.0/freq - (time.time()-startTime)))
