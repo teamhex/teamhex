@@ -62,7 +62,7 @@ def goMapping(freq=30):
         pose = ct.getPose()
 
         balls = getBalls()
-        knownBalls = [v.getBallCoords(b) for b in getKnownBalls(balls)]
+        knownBalls = [v.getBallCoords(b,pose) for b in getKnownBalls(balls)]
         specialWallPoints = [getPoint(pose,v.getAreaAngle(a),640) for a in getWalls()]
 
         # Mapping update
