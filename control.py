@@ -271,7 +271,7 @@ def getPoint(start,orientation,distance):
 
 #goSim()
 def start():
-    global myMap,q,mapThread$,pygameThread
+    global myMap,q,mapThread#,pygameThread
     q = False
 
     mapThread = threading.Thread(target=goMapping)
