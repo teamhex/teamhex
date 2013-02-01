@@ -303,7 +303,7 @@ def pickUpBall(area, freq = 10.0):
     while not ct.waitingForCommand():
         time.sleep(1.0/freq)
     
-def ballGo(freq=10.0):
+def ballGo(endTime,freq=10.0):
     pose = ct.getPose()
     balls = getBalls()
     knownBalls = getKnownBalls(balls)
@@ -320,7 +320,7 @@ def ballGo(freq=10.0):
             if bPrime.size > b.size:
                 b = bPrime
         goTowardsArea(balls[0])
-        while not ct.waitingForCommand():
+        while (not ct.waitingForCommand()) and (endTime > time.time()):
             startTime = time.time()
             pose = ct.getPose()
             knownBalls = getKnownBalls(getBalls)
@@ -332,14 +332,14 @@ def ballGo(freq=10.0):
                 return
             time.sleep(max(0,1.0/freq - (time.time()-startTime)))
 
-def ballGoAndRotate(freq=10.0):
-    ballGo()
-    while not ct.waitingForCommand():
+def ballGoAndRotate(endTime,freq=10.0):
+    ballGo(endTime)
+    while not ct.waitingForCommand() and (endTime > time.time()):
         time.sleep(1.0/freq)
     initial = ct.getPose()[2]
     prev = 0
     ct.setBasicControl(angular=3.0)
-    while (ct.getPose()[2]-initial)%(2*math.pi) < prev:
+    while (ct.getPose()[2]-initial)%(2*math.pi) >= prev and (endTime > time.time()):
         startTime = time.time()
         if len(getBalls()) > 0:
             ballGo()
@@ -349,6 +349,32 @@ def ballGoAndRotate(freq=10.0):
             ct.setBasicControl(angular=2.0)
         prev = (ct.getPose()[2]-initial)%(2*math.pi)
         time.sleep(max(0,1.0/freq-(time.time()-startTime)))
+    ct.setBasicControl()
+
+def scoreGo(endTime, freq=10.0):
+    pose = ct.getPose()
+    walls = getWalls()
+    if len(walls) > 0:
+        print "Going to the wall :)"
+        goTowardsArea(walls[0])
+        while not ct.waitingForCommand() and (endTime > time.time()):
+            time.sleep(1.0/freq)
+        ct.setWallAlignmentControl()
+        while not ct.waitingForCommand() and (endTime > time.time()):
+            time.sleep(1.0/freq)
+        score()
+    else:
+        # Spin 360 degrees looking for wall
+        initial = ct.getPose()[2]
+        prev = 0
+        ct.setBasicControl(angular=3.0)
+        while (ct.getPose()[2]-initial)%(2*math.pi) >= prev and (endTime > time.time()):
+            startTime = time.time()
+            if len(getWalls()) > 0:
+                scoreGo()
+                break
+            prev = (ct.getPose()[2]-initial)%(2*math.pi)
+            time.sleep(max(0,1.0/freq-(time.time()-startTime)))
     ct.setBasicControl()
 
 def score(nBalls=5):
@@ -370,4 +396,5 @@ def getKnownBalls(balls):
             knownBalls.append(b)
     return knownBalls
 
-#def getWalls()
+def getWalls():
+    return [x for x in v.getAreas() if v.isWall(x)]
