@@ -327,10 +327,26 @@ def ballGo(freq=10.0):
                 return
             time.sleep(max(0,1.0/freq - (time.time()-startTime)))
 
-def score(nBalls=10):
+def ballGoAndRotate(freq=10.0):
+    ballGo()
+    while not ct.waitingForCommand():
+        time.sleep(1.0/freq)
+    initial = ct.getPose[2]
+    prev = 0
+    ct.setBasicControl(angular=3.0)
+    while (ct.getPose()[2]-initial)%(2*math.pi) < prev:
+        time.sleep(1.0/freq)
+
+def score(nBalls=5):
     ct.changeRamp()
     time.sleep(1)
     ct.changeShooter()
-    time.sleep(nBalls)
+    time.sleep(1.0*nBalls)
     ct.changeShooter()
     ct.changeRamp()
+
+def getBalls():
+    return [x for x in v.getAreas() if v.isBall(x)]
+
+def getKnownBalls():
+    for 
