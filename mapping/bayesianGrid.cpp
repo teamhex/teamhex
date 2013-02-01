@@ -3,10 +3,10 @@
 #include <stdio.h>
 
 Cell theMap[HEIGHT][WIDTH];
-Position *queue[HEIGHT*WIDTH];
-int queueFront, queueBack;
-int operationID;
-int visited[HEIGHT][WIDTH];
+static Position *queue[HEIGHT*WIDTH];
+static int queueFront, queueBack;
+static int operationID;
+static int visited[HEIGHT][WIDTH];
 
 Position *allNeighbors[HEIGHT][WIDTH][NNEIGHBORS];
 int allnNeighbors[HEIGHT][WIDTH];
@@ -27,7 +27,7 @@ double bayesianUpdate(double prior, double pDGivenX, double pDGivenNX, bool dHap
   }
   // We are careful to not return 1 or 0, due to doubles messing up.
   result = pXAndEvent/(pXAndEvent + pNXAndEvent);
-  if(result == 1 || result == 0) {
+  if(result == 1.0 || result == 0.0) {
     return prior;
   }
   else {
@@ -145,8 +145,6 @@ void sensorUpdate(int type, bool detect, RealPosition &worldPos, RealPosition &r
     while(robotGridPos.l != gridPos.l || robotGridPos.c != gridPos.c) {
       l = robotGridPos.l;
       c = robotGridPos.c;
-
-      //printf("%d %d %d %d\n", l, c, gridPos.l, gridPos.c);
 
       theMap[l][c].pWall = bayesianUpdate(theMap[l][c].pWall, P_DETECT_GIVEN_WALL, P_DETECT_GIVEN_NWALL, false);
       theMap[l][c].visited = true;

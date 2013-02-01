@@ -27,15 +27,24 @@ class CPosition(ctypes.Structure):
     _fields_ = [('x', (ctypes.c_double)),
                 ('y', (ctypes.c_double))]
 
+NORMAL_WALL = 0
+YELLOW_WALL = 1
+PURPLE_WALL = 2
+BLACK_WALL = 3
+
 def cleanQuit(signal, frame):
+    global mapThread,pygameThread,q
     print "Interrupt received"
     q = True
+    mapThread.join()
+    pygameThread.join()
     pygame.quit()
     ct.stop()
-    v.stop()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, cleanQuit)
+
+recordedBalls = set([])
 
 def goMapping(freq=30):
     global myMap,q
@@ -50,13 +59,17 @@ def goMapping(freq=30):
         sensorPoints = ct.getSensorPoints()
         pose = ct.getPose()
 
-        areas = [a for a in v.getAreas() if v.getBallCoords(a,pose) is not None]
+        balls = [x for x in v.getAreas() if v.isBall(x)]
+        knownBalls = []
+        for b in balls:
+            bc = v.getBallCoords(b,pose)
+            if bc is not None:
+                knownBalls.append(bc)
+
         # Mapping update
         myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
-        for a in areas:
-            if v.isBall(a):
-                coords = v.getBallCoords(a,pose)
-                myMap.ballDetected(ctypes.c_double(coords[0]),ctypes.c_double(coords[1]),ctypes.c_int(RED_BALL))
+        for a in knownBalls:
+            myMap.ballDetected(ctypes.c_double(a[0]),ctypes.c_double(a[1]),ctypes.c_int(RED_BALL))
         for s in sensorPoints:
             if(s[2]):
                 myMap.wallDetected(ctypes.c_double(s[0]), ctypes.c_double(s[1]))
@@ -65,12 +78,12 @@ def goMapping(freq=30):
         time.sleep(max(0,1.0/float(freq) - (time.time()-start)))
 
 def goPygame():
-    global myMap,q
+    global myMap,q,recordedBalls
     pygame.init()
 
     # Parameters
     width,height = 900,900
-    realWidth,realHeight = 900,900
+    realWidth,realHeight = 450,450
     ROBOT_RADIUS = 7
     BALL_RADIUS = 2.5/2.0
     RED_COLOR = pygame.Color(255,0,0)
@@ -95,11 +108,11 @@ def goPygame():
         #main_surface.blit(fieldMap, (0,0))
         main_surface.fill(WHITE_COLOR)
 
-        balls = [v.getBallCoords(a,pose) for a in v.getAreas() if v.getBallCoords(a,pose) is not None]
-        for b in balls:
-            pygame.draw.circle(main_surface, BLUE_COLOR,
-                               (int(b[0])*prop, (realHeight-1-int(b[1]))*prop),
-                               int(BALL_RADIUS)*prop, 0)
+        #balls = v.getAreas(pose)
+        #for b in balls:
+        #    pygame.draw.circle(main_surface, BLUE_COLOR,
+        #                       (int(b[0])*prop, (realHeight-1-int(b[1]))*prop),
+        #                       int(BALL_RADIUS)*prop, 0)
 
         pygame.draw.circle(main_surface, BLUE_COLOR,
                            (int(pose[0])*prop,(realHeight-1-int(pose[1]))*prop),
@@ -117,6 +130,10 @@ def goPygame():
             for y in xrange(realHeight):
                 if(myMap.getWall(x,y)):
                     pygame.draw.rect(main_surface, RED_COLOR,(x*prop,(realHeight-1-y)*prop,prop,prop))
+                elif(myMap.getBall(x,y)):
+                    pygame.draw.circle(main_surface, BLUE_COLOR,
+                                       (x*prop, (realHeight-1-y)*prop),
+                                       int(BALL_RADIUS)*prop, 0)
 
         for event in pygame.event.get():
             if event.type == QUIT:
@@ -126,15 +143,15 @@ def goPygame():
             pygame.display.update()
         fpsClock.tick(50)
 
-def goSim(freq=10.0):
+def goSim(freq=50.0):
     global myMap,q,mapThread,pygameThread
     q = False
 
     mapThread = threading.Thread(target=goMapping)
     pygameThread = threading.Thread(target=goPygame)
     
-    ct.initialize()
     v.initialize()
+    ct.initialize()
     mapThread.start()
     pygameThread.start()
 
@@ -148,7 +165,9 @@ def goSim(freq=10.0):
     state = FOLLOW
     ct.setWallFollowControl()
 
-    while not q:
+    startTime = time.time()
+
+    while not q and ((time.time()-startTime) <= 3*60):
         start = time.time()
         pose = ct.getPose()
         myMap.setConfigSpace()
@@ -177,14 +196,14 @@ def goSim(freq=10.0):
                 if len(knownBalls) != 0:
                     ct.addWayPoints([[a[0],a[1],0,False] for a in knownBalls])
                 else:
-                    ct.setBasicControl(angular=2.0)
+                    ct.setBasicControl(angular=3.0)
                     state = SPIN
                     spinStart = time.time()
                     
         elif state == APPROACH_ORIENT:
             if ct.waitingForCommand():
                 state = APPROACH_GO
-                ct.setBasicControl(forward=6.0)
+                ct.setBasicControl(forward=3.0)
                 
         elif state == APPROACH_GO:
             if len(knownBalls) != 0:
@@ -250,4 +269,68 @@ def getPoint(start,orientation,distance):
     y = start[1] + distance * math.sin(orientation)
     return x,y
 
-goSim()
+#goSim()
+def start():
+    global myMap,q,mapThread,pygameThread
+    q = False
+
+    mapThread = threading.Thread(target=goMapping)
+    pygameThread = threading.Thread(target=goPygame)
+    
+    ct.initialize()
+    v.initialize()
+    mapThread.start()
+    pygameThread.start()
+
+    ct.setWallFollowControl()
+
+#goSim()
+
+def goTowardsArea(area):
+    pose = ct.getPose()
+    theta = v.getAreaAngle(area,pose)
+    point = getPoint(pose,theta,1000000)
+    ct.clearWayPoints()
+    ct.setWayPointControl()
+    ct.addWayPoints([list(point) + [0,False]])
+
+def pickUpBall(area, freq = 10.0):
+    coords = v.getBallCoords(area,ct.getPose())
+    if coords is not None:
+        ct.clearWayPoints()
+        ct.setWayPointControl()
+        ct.addWayPoints([list(coords) + [0,False]])
+    while not ct.waitingForCommand():
+        time.sleep(1.0/freq)
+    
+def ballGo(freq=10.0):
+    pose = ct.getPose()
+    balls = [x for x in v.getAreas() if v.isBall(x)]
+    knownBalls = [x for x in balls if v.getBallCoords(x,pose) is not None]
+    if len(knownBalls) > 0:
+        print "Picking up ball :)"
+        ct.clearWayPoints()
+        ct.setWayPointControl()
+        ct.addWayPoints([v.getBallCoords(x,pose) + [0,False] for x in knownBalls])
+    elif len(balls) > 0:
+        print "Going to ball :P"
+        goTowardsArea(balls[0])
+        while not ct.waitingForCommand():
+            startTime = time.time()
+            pose = ct.getPose()
+            knownBalls = [x for x in v.getAreas() if v.isBall(x) and v.getBallCoords(x,pose) is not None]
+            if len(knownBalls) > 0:
+                print "Picking up ball :)"
+                ct.clearWayPoints()
+                ct.setWayPointControl()
+                ct.addWayPoints([v.getBallCoords(x,pose) + [0,False] for x in knownBalls])
+                return
+            time.sleep(max(0,1.0/freq - (time.time()-startTime)))
+
+def score(nBalls=10):
+    ct.changeRamp()
+    time.sleep(1)
+    ct.changeShooter()
+    time.sleep(nBalls)
+    ct.changeShooter()
+    ct.changeRamp()

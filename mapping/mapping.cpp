@@ -7,6 +7,7 @@ RealPosition robotPosition;
 
 void initMapping() {
   initialize();
+  startPlanning();
 }
 
 void robotPositioned(double robotX, double robotY) {

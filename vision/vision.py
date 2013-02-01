@@ -18,8 +18,8 @@ hues = [
     ]
 
 ballHues = set([
-        GREEN,
-        RED
+        GREEN
+#        RED
         ])
 
 def hueDiff(ang1,ang2):
@@ -125,7 +125,6 @@ def camLoop(freq=10):
         nAreas.value = myCam.getNAreas()
         for i in xrange(nAreas.value):
             myCam.getArea(i, ctypes.byref(areas[i]))
-        print (1.0/(time.time()-start))
         time.sleep(max(0,1/float(freq) - (time.time()-start)))
     myCam.stopCam()
         

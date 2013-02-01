@@ -5,6 +5,15 @@
 int configMap[HEIGHT][WIDTH];
 Position *plan[HEIGHT*WIDTH];
 int planLength;
+static Position *queue[HEIGHT*WIDTH];
+static int queueFront,queueBack;
+static int operationID;
+static int visited[HEIGHT][WIDTH];
+
+void startPlanning() {
+  operationID = 0;
+  memset(visited,0,sizeof(int)*WIDTH*HEIGHT);
+}
 
 void wallExpand(int l, int c, int radius) {
   double dist;
