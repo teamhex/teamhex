@@ -53,23 +53,24 @@ def goMapping(freq=30):
     RED_BALL = 4
     GREEN_BALL = 5
 
+    YELLOW_WALL = 2
+
     myMap.initMapping()
     while not q:
         start = time.time()
         sensorPoints = ct.getSensorPoints()
         pose = ct.getPose()
 
-        balls = [x for x in v.getAreas() if v.isBall(x)]
-        knownBalls = []
-        for b in balls:
-            bc = v.getBallCoords(b,pose)
-            if bc is not None:
-                knownBalls.append(bc)
+        balls = getBalls()
+        knownBalls = [v.getBallCoords(b) for b in getKnownBalls(balls)]
+        specialWallPoints = [getPoint(pose,v.getAreaAngle(a),640) for a in getWalls()]
 
         # Mapping update
         myMap.robotPositioned(ctypes.c_double(pose[0]), ctypes.c_double(pose[1]))
         for a in knownBalls:
             myMap.ballDetected(ctypes.c_double(a[0]),ctypes.c_double(a[1]),ctypes.c_int(RED_BALL))
+        for wp in specialWallPoints:
+            myMap.specialWall(ctypes.c_double(wp[0]),ctypes.c_double(wp[1]),ctypes.c_int(YELLOW_WALL))
         for s in sensorPoints:
             if(s[2]):
                 myMap.wallDetected(ctypes.c_double(s[0]), ctypes.c_double(s[1]))
@@ -392,9 +393,16 @@ def getKnownBalls(balls):
     pose = ct.getPose()
     knownBalls = []
     for b in balls:
-        if v.getBallCoords(b,pose) is not None:
+        bc = v.getBallCoords(b,pose)
+        if bc is not None and canDrive(pose,bc):
             knownBalls.append(b)
     return knownBalls
 
 def getWalls():
     return [x for x in v.getAreas() if v.isWall(x)]
+
+def startMapping():
+    global q,mapThread
+    q = False
+    mapThread = threading.Thread(target=goMapping)
+    mapThread.start()

@@ -203,7 +203,7 @@ bool setWallType(int type, RealPosition &orientation, RealPosition &robotPos) {
     
     for(int i = 0; i < nNeighbors; ++i) {
       d = distanceSqr(gridOri, *neighbors[i]);
-      if(d < minDist) {
+      if(d < minDist && d < FIELD_DIAMETER) {
 	minDist = d;
 	robotGridPos.l = neighbors[i]->l;
 	robotGridPos.c = neighbors[i]->c;
