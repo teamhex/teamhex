@@ -26,6 +26,10 @@ class PIDController():
         self.xDesired = myxDesired
         if (reset):
             self.xErrorIntegral = 0
+            self.xError = 0
+            self.dXError = 0
+            self.xErrorPrevious = 0
+            self.xErrorIntegral = 0
     def getDesired(self):
         return self.xDesired
     def update(self,xSense):
