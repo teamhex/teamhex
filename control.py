@@ -342,7 +342,7 @@ def ballGoAndRotate(endTime,freq=10.0):
     while (ct.getPose()[2]-initial)%(2*math.pi) >= prev and (endTime > time.time()):
         startTime = time.time()
         if len(getBalls()) > 0:
-            ballGo()
+            ballGo(endTime)
             while not ct.waitingForCommand():
                 time.sleep(1.0/freq)
             inital = ct.getPose()[2]
