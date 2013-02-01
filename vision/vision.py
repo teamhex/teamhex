@@ -18,8 +18,13 @@ hues = [
     ]
 
 ballHues = set([
-        GREEN
-#        RED
+        GREEN,
+        RED
+        ])
+
+wallHues = set([
+        YELLOW,
+        PURPLE
         ])
 
 def hueDiff(ang1,ang2):
@@ -151,6 +156,9 @@ def getAreas():
 
 def isBall(area):
     return (getHue(area) in ballHues)
+
+def isWall(area):
+    return (getHue(area) in wallHues)
 
 def getAreaAngle(area,pose):
     theta = math.atan((area.centerC-xRes/2.0)/focalX)

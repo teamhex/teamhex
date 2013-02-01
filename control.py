@@ -16,8 +16,8 @@ import threading
 import controller.control as ct
 import vision.vision as v
 
-import pygame
-from pygame.locals import *
+#import pygame
+#from pygame.locals import *
 
 import random
 
@@ -33,12 +33,12 @@ PURPLE_WALL = 2
 BLACK_WALL = 3
 
 def cleanQuit(signal, frame):
-    global mapThread,pygameThread,q
+    global mapThread,q#pygameThread,q
     print "Interrupt received"
     q = True
     mapThread.join()
-    pygameThread.join()
-    pygame.quit()
+    #pygameThread.join()
+    #pygame.quit()
     ct.stop()
     sys.exit(0)
 
@@ -77,83 +77,83 @@ def goMapping(freq=30):
                 myMap.wallNotDetected(ctypes.c_double(s[0]), ctypes.c_double(s[1]))
         time.sleep(max(0,1.0/float(freq) - (time.time()-start)))
 
-def goPygame():
-    global myMap,q,recordedBalls
-    pygame.init()
+# def goPygame():
+#     global myMap,q,recordedBalls
+#     pygame.init()
 
-    # Parameters
-    width,height = 900,900
-    realWidth,realHeight = 450,450
-    ROBOT_RADIUS = 7
-    BALL_RADIUS = 2.5/2.0
-    RED_COLOR = pygame.Color(255,0,0)
-    GREEN_COLOR = pygame.Color(0,255,0)
-    WHITE_COLOR = pygame.Color(255,255,255)
-    BLACK_COLOR = pygame.Color(0,0,0)
-    BLUE_COLOR = pygame.Color(0,0,255)
-    prop = int((width/realWidth + height/realHeight)/2)
+#     # Parameters
+#     width,height = 900,900
+#     realWidth,realHeight = 450,450
+#     ROBOT_RADIUS = 7
+#     BALL_RADIUS = 2.5/2.0
+#     RED_COLOR = pygame.Color(255,0,0)
+#     GREEN_COLOR = pygame.Color(0,255,0)
+#     WHITE_COLOR = pygame.Color(255,255,255)
+#     BLACK_COLOR = pygame.Color(0,0,0)
+#     BLUE_COLOR = pygame.Color(0,0,255)
+#     prop = int((width/realWidth + height/realHeight)/2)
 
-    fpsClock = pygame.time.Clock()
-    pygame.display.set_caption('Robot location and vision')
-    main_surface = pygame.display.set_mode((width, height))
-    fieldMap = pygame.transform.scale(
-        pygame.image.load("simulator/map.bmp"),
-        (width,height))
-    main_surface.fill(WHITE_COLOR)
-    #main_surface.blit(fieldMap, (0,0))
+#     fpsClock = pygame.time.Clock()
+#     pygame.display.set_caption('Robot location and vision')
+#     main_surface = pygame.display.set_mode((width, height))
+#     fieldMap = pygame.transform.scale(
+#         pygame.image.load("simulator/map.bmp"),
+#         (width,height))
+#     main_surface.fill(WHITE_COLOR)
+#     #main_surface.blit(fieldMap, (0,0))
 
-    while not q:
-        pose = ct.getPose()
-        sensorPoints = ct.getSensorPoints()
-        #main_surface.blit(fieldMap, (0,0))
-        main_surface.fill(WHITE_COLOR)
+#     while not q:
+#         pose = ct.getPose()
+#         sensorPoints = ct.getSensorPoints()
+#         #main_surface.blit(fieldMap, (0,0))
+#         main_surface.fill(WHITE_COLOR)
 
-        #balls = v.getAreas(pose)
-        #for b in balls:
-        #    pygame.draw.circle(main_surface, BLUE_COLOR,
-        #                       (int(b[0])*prop, (realHeight-1-int(b[1]))*prop),
-        #                       int(BALL_RADIUS)*prop, 0)
+#         #balls = v.getAreas(pose)
+#         #for b in balls:
+#         #    pygame.draw.circle(main_surface, BLUE_COLOR,
+#         #                       (int(b[0])*prop, (realHeight-1-int(b[1]))*prop),
+#         #                       int(BALL_RADIUS)*prop, 0)
 
-        pygame.draw.circle(main_surface, BLUE_COLOR,
-                           (int(pose[0])*prop,(realHeight-1-int(pose[1]))*prop),
-                           ROBOT_RADIUS*prop, prop)
-        for s in sensorPoints:
-            if(s[2]):
-                color = RED_COLOR
-            else:
-                color = BLACK_COLOR
-            pygame.draw.line(main_surface, color,
-                             (int(pose[0])*prop,(realHeight-1-int(pose[1]))*prop),
-                             (int(s[0])*prop,(realHeight-1-int(s[1]))*prop),
-                             prop)
-        for x in xrange(realWidth):
-            for y in xrange(realHeight):
-                if(myMap.getWall(x,y)):
-                    pygame.draw.rect(main_surface, RED_COLOR,(x*prop,(realHeight-1-y)*prop,prop,prop))
-                elif(myMap.getBall(x,y)):
-                    pygame.draw.circle(main_surface, BLUE_COLOR,
-                                       (x*prop, (realHeight-1-y)*prop),
-                                       int(BALL_RADIUS)*prop, 0)
+#         pygame.draw.circle(main_surface, BLUE_COLOR,
+#                            (int(pose[0])*prop,(realHeight-1-int(pose[1]))*prop),
+#                            ROBOT_RADIUS*prop, prop)
+#         for s in sensorPoints:
+#             if(s[2]):
+#                 color = RED_COLOR
+#             else:
+#                 color = BLACK_COLOR
+#             pygame.draw.line(main_surface, color,
+#                              (int(pose[0])*prop,(realHeight-1-int(pose[1]))*prop),
+#                              (int(s[0])*prop,(realHeight-1-int(s[1]))*prop),
+#                              prop)
+#         for x in xrange(realWidth):
+#             for y in xrange(realHeight):
+#                 if(myMap.getWall(x,y)):
+#                     pygame.draw.rect(main_surface, RED_COLOR,(x*prop,(realHeight-1-y)*prop,prop,prop))
+#                 elif(myMap.getBall(x,y)):
+#                     pygame.draw.circle(main_surface, BLUE_COLOR,
+#                                        (x*prop, (realHeight-1-y)*prop),
+#                                        int(BALL_RADIUS)*prop, 0)
 
-        for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                q = True
-        if not q:
-            pygame.display.update()
-        fpsClock.tick(50)
+#         for event in pygame.event.get():
+#             if event.type == QUIT:
+#                 pygame.quit()
+#                 q = True
+#         if not q:
+#             pygame.display.update()
+#         fpsClock.tick(50)
 
 def goSim(freq=50.0):
-    global myMap,q,mapThread,pygameThread
+    global myMap,q,mapThread#,pygameThread
     q = False
 
     mapThread = threading.Thread(target=goMapping)
-    pygameThread = threading.Thread(target=goPygame)
+    #pygameThread = threading.Thread(target=goPygame)
     
     v.initialize()
     ct.initialize()
     mapThread.start()
-    pygameThread.start()
+    #pygameThread.start()
 
     FOLLOW = 0
     GRAB = 1
@@ -271,16 +271,16 @@ def getPoint(start,orientation,distance):
 
 #goSim()
 def start():
-    global myMap,q,mapThread,pygameThread
+    global myMap,q,mapThread$,pygameThread
     q = False
 
     mapThread = threading.Thread(target=goMapping)
-    pygameThread = threading.Thread(target=goPygame)
+    #pygameThread = threading.Thread(target=goPygame)
     
     ct.initialize()
     v.initialize()
     mapThread.start()
-    pygameThread.start()
+    #pygameThread.start()
 
     ct.setWallFollowControl()
 
