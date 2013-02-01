@@ -390,6 +390,7 @@ def getBalls():
     return [x for x in v.getAreas() if v.isBall(x)]
 
 def getKnownBalls(balls):
+    myMap.setConfigSpace()
     pose = ct.getPose()
     knownBalls = []
     for b in balls:
