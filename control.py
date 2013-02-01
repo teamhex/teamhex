@@ -371,7 +371,7 @@ def scoreGo(endTime, freq=10.0):
         while (ct.getPose()[2]-initial)%(2*math.pi) >= prev and (endTime > time.time()):
             startTime = time.time()
             if len(getWalls()) > 0:
-                scoreGo()
+                scoreGo(endTime)
                 break
             prev = (ct.getPose()[2]-initial)%(2*math.pi)
             time.sleep(max(0,1.0/freq-(time.time()-startTime)))
