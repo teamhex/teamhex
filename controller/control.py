@@ -249,6 +249,7 @@ def changeShooter():
     commandQueue.put(SHOOTER_CHANGE)
 
 def setWallAlignmentControl():
+    inWait.value = 0
     CONTROLLER.value = WALL_ALIGN
     commandQueue.put(ALIGN_RESET)
 

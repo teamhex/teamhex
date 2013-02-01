@@ -323,7 +323,7 @@ def ballGo(endTime,freq=10.0):
         while (not ct.waitingForCommand()) and (endTime > time.time()):
             startTime = time.time()
             pose = ct.getPose()
-            knownBalls = getKnownBalls(getBalls)
+            knownBalls = getKnownBalls(getBalls())
             if len(knownBalls) > 0:
                 print "Picking up ball :)"
                 ct.clearWayPoints()
