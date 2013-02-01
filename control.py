@@ -14,6 +14,7 @@ import math
 import threading
 
 import controller.control as ct
+from controller.PIDControlModule import PIDController
 import vision.vision as v
 
 #import pygame
@@ -309,6 +310,7 @@ def pickUpBall(area, freq = 10.0):
         time.sleep(1.0/freq)
     
 def ballGo(endTime,freq=10.0):
+    global nBalls
     pose = ct.getPose()
     balls = getBalls()
     knownBalls = getKnownBalls(balls)
@@ -316,6 +318,7 @@ def ballGo(endTime,freq=10.0):
         print "Picking up ball :)"
         ct.clearWayPoints()
         ct.setWayPointControl()
+        nBalls = nBalls + len(knownBalls)
         ct.addWayPoints([v.getBallCoords(x,pose) + [0,False] for x in knownBalls])
     elif len(balls) > 0:
         print "Going to ball :P"
@@ -359,24 +362,26 @@ def ballGoAndRotate(endTime,freq=10.0):
 def scoreGo(endTime, freq=10.0):
     pose = ct.getPose()
     walls = getWalls()
-    vsTroller = PIDController(1,.001,.001)
+    vsTroller = PIDController(0.05,.001,.02)
     vsTroller.setDesired(0)
     if len(walls) > 0:
         print "Going to the wall :)"
         wall = walls[0]
-        while len([p for p in sp[1:4] if ct.distance(p,pose) < ct.ROBOT_RADIUS + 3.0]) == 0 and (endTime > time.time()):
-			walls = getWalls()
-			if len(walls) > 0:
-				wall = getWalls()[0]
-			error = wall.centerC - v.xRes/2.0
-			ct.setBasicControl(angular = vsTroller.update(error), forward = 3.0)
+        ct.setBasicControl(forward=0.1)
+        while ct.movingForward() and (endTime > time.time()):
+            walls = getWalls()
+            if len(walls) > 0:
+                wall = getWalls()[0]
+                error = wall.centerC - v.xRes/2.0
+            else:
+                error = 0
+            ct.setBasicControl(angular = vsTroller.update(error), forward = 3.0)
             time.sleep(1.0/freq)
-            pose = ct.getPose()
-            sp = ct.getSensorPoints()
         ct.setWallAlignmentControl()
         while not ct.waitingForCommand() and (endTime > time.time()):
             time.sleep(1.0/freq)
-        score()
+        if(endTime > time.time()):
+            score()
     else:
         # Spin 360 degrees looking for wall
         initial = ct.getPose()[2]
@@ -391,11 +396,21 @@ def scoreGo(endTime, freq=10.0):
             time.sleep(max(0,1.0/freq-(time.time()-startTime)))
     ct.setBasicControl()
 
-def score(nBalls=5):
+def score():
+    global nBalls
     ct.changeRamp()
     time.sleep(1)
     ct.changeShooter()
-    time.sleep(1.0*nBalls)
+
+    # ShakeYoBooty
+    tStart = time.time()
+    while((time.time()-tStart) < 1.0*nBalls):
+        ct.setBasicControl(angular=3.0)
+        time.sleep(1.0)
+        ct.setBasicControl(angular=-3.0)
+        time.sleep(1.0)
+
+    nBalls = 0
     ct.changeShooter()
     ct.changeRamp()
 
@@ -429,8 +444,11 @@ def startMapping():
     mapThread = threading.Thread(target=goMapping)
     mapThread.start()
 
+nBalls = 10
+    
 def main(freq = 100.0):
     global nBalls
+    nBalls = 0
     v.initialize()
     ct.initialize()
     startMapping()
